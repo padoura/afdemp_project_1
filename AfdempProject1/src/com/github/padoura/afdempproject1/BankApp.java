@@ -32,6 +32,8 @@ public class BankApp {
         // TODO code application logic here
         dbCtrl = new DbController();
         dbCtrl.checkConnectivity();
+        loginCtrl = new LoginController();
+        loginCtrl.showLoginDialog();
     }
     
     

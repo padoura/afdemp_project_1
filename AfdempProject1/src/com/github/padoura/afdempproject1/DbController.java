@@ -5,13 +5,13 @@
  */
 package com.github.padoura.afdempproject1;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 
 /**
  *
@@ -20,6 +20,12 @@ import java.util.logging.Logger;
 public class DbController {
     
     private Connection conn;
+    private static final String IP = "localhost";
+    private static final int PORT = 3306;
+    private static final String DATABASE_NAME = "localhost";
+    private static final String USERNAME = "afdemp";
+    private static final String PASSWORD = "afdemp";
+    
     
     public void closeConnection(){
         try {
@@ -34,7 +40,7 @@ public class DbController {
     public void checkConnectivity() {
         System.out.println("Welcome!");
         System.out.println("Please wait while database connection is tested...");
-        dbConnect("localhost", 3306, "afdemp_java_1", "afdemp", "afdemp");
+        dbConnect(IP, PORT, DATABASE_NAME, USERNAME, PASSWORD);
         encryptDb();
         closeConnection();
         System.out.println("Connection test complete!");
@@ -103,6 +109,24 @@ public class DbController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    
+    public BankAccount loadAccount(BankAccount account){
+        try {
+            String query = "SELECT * FROM accounts_of_users WHERE username = ?;";
+            PreparedStatement statement = conn.prepareStatement(query);
+            
+            statement.setString(1, account.getUsername());
+            ResultSet result = statement.executeQuery();
+            if (result.next()){
+                account.setId(result.getInt("id"));
+                account.setLastTransactionDate(result.getDate("transaction_date"));
+                account.setBalance(result.getBigDecimal("amount"));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return account;
     }
     
     
