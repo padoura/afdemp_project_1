@@ -129,6 +129,10 @@ public class DbController {
         return account;
     }
     
+    public boolean userExists(){
+        
+    }
+    
     
 }
 

@@ -19,6 +19,7 @@ public class BankAccount {
     private String password;
     private Date lastTransactionDate;
     private Integer id;
+    private boolean isAdmin;
     
     public void deposit(BankAccount otherAccount, BigDecimal amount){
         
