@@ -6,6 +6,7 @@
 package com.github.padoura.afdempproject1;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -55,7 +56,7 @@ public class BankApp {
             switch (choice) {
                 case 1: viewMyAccount();
                         break;
-                case 2: viewAllMembers();
+                case 2: viewMemberAccount();
                         break;
                 case 3: depositToMember();
                         break;
@@ -89,7 +90,7 @@ public class BankApp {
                         break;
                 case 0: terminate();
                         break;
-                default: System.out.println("Please choose a value between 0 and 5!");
+                default: System.out.println("Please choose a value between 0 and 4!");
             }
         }while(choice != 0); 
     }
@@ -150,22 +151,39 @@ public class BankApp {
     
     private static void viewMyAccount() {
         dbCtrl.loadAccount(bankAcnt);
-        menu.viewAccount(bankAcnt);
+        System.out.println(bankAcnt.toString());
     }
 
-    private static void viewAllMembers() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+//    private static void viewAllAccounts() {
+//        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
+//        menu.viewAllAccounts(accountList);
+//    }
 
     private static void depositToMember() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
+        clearConsole();
+        BankAccount otherAccount = menu.depositMenu(bankAcnt, accountList);
+        if (otherAccount != null){
+            // TO DO HERE...
+        }
     }
 
     private static void depositToAdmin() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        
     }
 
     private static void logTransactions() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private static void viewMemberAccount() {
+        BankAccount account = new BankAccount(loginCtrl.askForUsername());
+        dbCtrl.loadAccount(account);
+        if (account.getBalance() == null){
+            System.out.println("User " + account.getUsername() + " does not exist.");
+        }else{
+            System.out.println(bankAcnt.toString());
+        }
+       
     }
 }

@@ -5,7 +5,6 @@
  */
 package com.github.padoura.afdempproject1;
 
-import com.mysql.jdbc.CallableStatement;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,7 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import static java.util.jar.Pack200.Packer.PASS;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +38,7 @@ public class DbController {
         this.rs = null;
     }
     
-    public void checkConnectivity(){
+    protected void checkConnectivity(){
         if (connectionIsAvailable()){
             System.out.println("Database connection tested successfully!");
         }else{
@@ -47,7 +46,7 @@ public class DbController {
         }
     }
     
-    public boolean connectionIsAvailable(){
+    protected boolean connectionIsAvailable(){
         connect();
         
         try {
@@ -82,7 +81,7 @@ public class DbController {
                 case "ok": flag = 100;
                             break;
                 case "driver": flag = 100;
-                                break;
+                            break;
                 case "db": flag++;
             }
         }
@@ -121,7 +120,7 @@ public class DbController {
     }
     
     
-    public BankAccount loadAccount(BankAccount account){
+    protected BankAccount loadAccount(BankAccount account){
         connect();
         
         String query = "SELECT * FROM accounts_of_users WHERE username = ?;";
@@ -157,8 +156,39 @@ public class DbController {
         }
     }
     
+    protected ArrayList<BankAccount> loadAllAccounts() {
+        connect();
+        ArrayList<BankAccount> accountList = new ArrayList<>();
+         
+        String query = "SELECT username, transaction_date, amount "
+                + "FROM accounts_of_users;";
+        try {
+            stmt = conn.createStatement();
+        } catch (SQLException ex) {
+            System.out.println("Problem with database connection...");
+            closeConnection();
+            return null;
+        }
+        
+        try {
+            rs = stmt.executeQuery(query);
+            while (rs.next()){
+                BankAccount account = new BankAccount(rs.getString("username"), rs.getTimestamp("transaction_date"), rs.getBigDecimal("amount"));
+                accountList.add(account);
+            }
+            rs.close();
+        } catch (SQLException ex) {
+            System.out.println("User could not be searched.");
+        }finally{
+            closeConnection();
+            return accountList;
+        }
+    }
     
-    public boolean credentialsAreCorrect(BankAccount account){
+    
+    
+    
+    protected boolean credentialsAreCorrect(BankAccount account){
         connect();
         String query = "SELECT user_exists(?, ?);";
         try {
@@ -192,7 +222,7 @@ public class DbController {
         }
     }
     
-    public boolean balanceIsEnough(String username, BigDecimal amount){
+    protected boolean balanceIsEnough(String username, BigDecimal amount){
         connect();
         String query = "SELECT amount_is_available(?, ?);";
         boolean result;
@@ -235,18 +265,10 @@ public class DbController {
             return false;
         }
         
-        try {
-            rs.close();
-            closeConnection();
-            return result;
-        } catch (SQLException ex) {
-            System.out.println("Random rs.close error.");
-            closeConnection();
-            return false;
-        }
+        return result;
     }
     
-    
+
     
     
     
@@ -339,6 +361,8 @@ public class DbController {
 //            e.printStackTrace();
 //        }
 //    }
+
+
     
     
 }

@@ -43,19 +43,19 @@ public class LoginController {
         }
     }
     
-    private String askForUsername(){
+    protected String askForUsername(){
         return askForCredential("username");
     }
     
     private String askForCredential(String type){
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Please enter your " + type + ":");
+        System.out.println("Please enter a " + type + ":");
         return scanner.nextLine();
     }
     
     private String maskCredential(String type){
         Console console = System.console();
-        console.printf("Please enter your " + type + ":\n");
+        console.printf("Please enter a " + type + ":\n");
         return new String(console.readPassword());
     }
     

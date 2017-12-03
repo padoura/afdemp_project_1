@@ -5,6 +5,8 @@
  */
 package com.github.padoura.afdempproject1;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 
 /**
@@ -51,8 +53,34 @@ public class UserMenu {
         
     }
 
-    protected void viewAccount(BankAccount bankAcnt) {
-        System.out.println(bankAcnt.toString());
+//    protected void viewAccount(BankAccount bankAcnt) {
+//        System.out.println(bankAcnt.toString());
+//    }
+
+    protected void viewAllAccounts(ArrayList<BankAccount> accountList) {
+        Iterator it = accountList.iterator();
+        if (it.hasNext()){
+            while(it.hasNext()){
+                System.out.println(it.next().toString());
+            }
+        }else{
+            System.out.println("No users exist...");
+        }
+    }
+
+    protected BankAccount depositMenu(BankAccount bankAcnt, ArrayList<BankAccount> accountList) {
+        System.out.println("Please enter a number from 0 to " + accountList.size() + ":");
+        for (int i=0;i<accountList.size();i++){
+            String username = accountList.get(i).getUsername();
+            if (!username.equals("admin")  || !username.equals(bankAcnt.getUsername()))
+                System.out.println("(" + (i+1) + ") " + accountList.get(i).getUsername());
+        }
+        System.out.println("(0) Return to Main Menu");
+        int choice;
+        do{
+            choice = menuSelector();
+        }while(choice < 0 || choice > accountList.size());
+        return (choice==0 ? null : accountList.get(choice-1));
     }
     
 }

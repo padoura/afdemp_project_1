@@ -39,6 +39,13 @@ public class BankAccount {
         this.balance = null;
         this.lastTransactionDate = null;
     }
+    
+    protected BankAccount(String username, Timestamp lastTransactionDate, BigDecimal balance) {
+        this.username = username;
+        this.password = null;
+        this.balance = balance;
+        this.lastTransactionDate = lastTransactionDate;
+    }
 
 
     
@@ -84,7 +91,7 @@ public class BankAccount {
 
     @Override
     public String toString() {
-        return username + "'s Balance:" + balance + " € Last Transaction:" + lastTransactionDate ;
+        return "Username: " + username + " Balance:" + balance + " € Last Transaction:" + lastTransactionDate ;
     }
     
 }
