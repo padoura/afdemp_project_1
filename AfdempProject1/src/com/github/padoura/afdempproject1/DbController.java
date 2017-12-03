@@ -29,15 +29,27 @@ public class DbController {
     private static final String USERNAME = "afdemp";
     private static final String PASSWORD = "afdemp";
     
-    private Connection conn = null;
-    private Statement stmt = null;
-    private ResultSet rs = null;
-    
-    public boolean checkConnectivity(){
-        connect();
+    private Connection conn;
+    private Statement stmt;
+    private ResultSet rs;
 
-        //STEP 4: Execute a query 
-        System.out.println("Creating statement...");
+    public DbController() {
+        this.conn = null;
+        this.stmt = null;
+        this.rs = null;
+    }
+    
+    public void checkConnectivity(){
+        if (connectionIsAvailable()){
+            System.out.println("Database connection tested successfully!");
+        }else{
+            System.out.println("Database connection could not be established!");
+        }
+    }
+    
+    public boolean connectionIsAvailable(){
+        connect();
+        
         try {
             stmt = conn.createStatement();
         } catch (SQLException ex) {
@@ -45,10 +57,9 @@ public class DbController {
             return false;
         }
         String sql;
-        sql = "SELECT * FROM members LIMIT 1";
+        sql = "SELECT * FROM users LIMIT 1";
         try {
             rs = stmt.executeQuery(sql);
-            //STEP 5: Extract data from result set
             if (rs.next()) {
                 rs.close();
                 return true;
@@ -70,11 +81,9 @@ public class DbController {
             switch (event) {
                 case "ok": flag = 100;
                             break;
-                case "driver": System.out.println("No MySQL driver found. Please install it.");
-                                flag = 100;
+                case "driver": flag = 100;
                                 break;
-                case "db": System.out.println("Database connection problem! Retrying connection...");
-                            flag++;
+                case "db": flag++;
             }
         }
     }
@@ -108,17 +117,6 @@ public class DbController {
             } catch (SQLException ex) {
                 System.out.println("Paei i sindesi...");
             }
-            System.out.println("Connection closed!");
-        }
-    }
-    
-    
-    private void dbCommit() {
-        try {
-            conn.commit();
-            System.out.println("All changes saved.");
-        } catch (SQLException e) {
-            System.out.println("Changes could be saved...");
         }
     }
     
@@ -145,8 +143,7 @@ public class DbController {
         try {
             rs = ((PreparedStatement) stmt).executeQuery();
             if (rs.next()){
-                account.setId(rs.getInt("id"));
-                account.setLastTransactionDate(rs.getDate("transaction_date"));
+                account.setLastTransactionDate(rs.getTimestamp("transaction_date"));
                 account.setBalance(rs.getBigDecimal("amount"));
             }else{
                 System.out.println("No such user exists!");
@@ -161,11 +158,11 @@ public class DbController {
     }
     
     
-    public boolean passwordIsCorrect(BankAccount account){
+    public boolean credentialsAreCorrect(BankAccount account){
         connect();
-        String query = "call user_exists (?, ?);";
+        String query = "SELECT user_exists(?, ?);";
         try {
-            stmt = conn.prepareCall(query);
+            stmt = conn.prepareStatement(query);
         } catch (SQLException ex) {
             System.out.println("Problem with database connection...");
             closeConnection();
@@ -173,8 +170,8 @@ public class DbController {
         }
         
         try {
-            ((CallableStatement) stmt).setString(1, account.getUsername());
-            ((CallableStatement) stmt).setString(2, account.getPassword());
+            ((PreparedStatement) stmt).setString(1, account.getUsername());
+            ((PreparedStatement) stmt).setString(2, account.getPassword());
         } catch (SQLException ex) {
             System.out.println("User could not be searched.");
             closeConnection();
@@ -182,7 +179,7 @@ public class DbController {
         }
         
         try {
-            rs = ((CallableStatement) stmt).executeQuery();
+            rs = ((PreparedStatement) stmt).executeQuery();
             rs.next();
             boolean result = rs.getBoolean(1);
             rs.close();
@@ -195,11 +192,12 @@ public class DbController {
         }
     }
     
-    public boolean balanceIsEnough(BankAccount account, BigDecimal amount){
+    public boolean balanceIsEnough(String username, BigDecimal amount){
         connect();
-        String query = "call amount_is_available (?, ?);";
+        String query = "SELECT amount_is_available(?, ?);";
+        boolean result;
         try {
-            stmt = conn.prepareCall(query);
+            stmt = conn.prepareStatement(query);
         } catch (SQLException ex) {
             System.out.println("Problem with database connection...");
             closeConnection();
@@ -207,34 +205,61 @@ public class DbController {
         }
         
         try {
-            ((CallableStatement) stmt).setString(1, account.getUsername());
-            ((CallableStatement) stmt).setBigDecimal(2, amount);
+            ((PreparedStatement) stmt).setString(1, username);
+            ((PreparedStatement) stmt).setBigDecimal(2, amount);
         } catch (SQLException ex) {
             System.out.println("Balance could not be checked.");
             closeConnection();
             return false;
         }
         
+        
         try {
-            rs = ((CallableStatement) stmt).executeQuery();
+            rs = ((PreparedStatement) stmt).executeQuery();
+        } catch (SQLException ex) {
+            System.out.println("Could not be executed");
+            return false;
+        }
+        
+        try {
             rs.next();
-            boolean result = rs.getBoolean(1);
+        } catch (SQLException ex) {
+            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+        
+        try {
+            result = rs.getBoolean(1);
+        } catch (SQLException ex) {
+            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+        
+        try {
             rs.close();
             closeConnection();
             return result;
         } catch (SQLException ex) {
-            System.out.println("Balance could not be checked.");
+            System.out.println("Random rs.close error.");
             closeConnection();
             return false;
         }
-    }   
+    }
     
     
     
     
     
     
-    
+        
+//    private void dbCommit() {
+//        try {
+//            conn.commit();
+//            System.out.println("All changes saved.");
+//        } catch (SQLException e) {
+//            System.out.println("Changes could be saved...");
+//        }
+//    }
     
     
 

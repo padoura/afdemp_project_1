@@ -6,7 +6,7 @@
 package com.github.padoura.afdempproject1;
 
 import java.math.BigDecimal;
-import java.sql.Date;
+import java.sql.Timestamp;
 
 /**
  *
@@ -17,62 +17,74 @@ public class BankAccount {
     private BigDecimal balance;
     private String username;
     private String password;
-    private Date lastTransactionDate;
-    private Integer id;
-    private boolean isAdmin;
+    private Timestamp lastTransactionDate;
+
+    protected BankAccount(String username) {
+        this.username = username;
+        this.password = null;
+        this.balance = null;
+        this.lastTransactionDate = null;
+    }
     
-    public void deposit(BankAccount otherAccount, BigDecimal amount){
+    protected BankAccount() {
+        this.username = null;
+        this.password = null;
+        this.balance = null;
+        this.lastTransactionDate = null;
+    }
+
+    protected BankAccount(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.balance = null;
+        this.lastTransactionDate = null;
+    }
+
+
+    
+    protected void deposit(BankAccount otherAccount, BigDecimal amount){
         
     }
 
-    public void setBalance(BigDecimal balance) {
+    protected void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 
-    public void setUsername(String username) {
+    protected void setUsername(String username) {
         this.username = username;
     }
 
-    public void setPassword(String password) {
+    protected void setPassword(String password) {
         this.password = password;
     }
 
-    public void setLastTransactionDate(Date lastTransactionDate) {
+    protected void setLastTransactionDate(Timestamp lastTransactionDate) {
         this.lastTransactionDate = lastTransactionDate;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public BigDecimal getBalance() {
+    protected BigDecimal getBalance() {
         return balance;
     }
 
-    public String getUsername() {
+    protected String getUsername() {
         return username;
     }
 
-    public String getPassword() {
+    protected String getPassword() {
         return password;
     }
 
-    public Date getLastTransactionDate() {
+    protected Timestamp getLastTransactionDate() {
         return lastTransactionDate;
     }
 
-    public Integer getId() {
-        return id;
+    protected boolean isAdmin() {
+        return username.equals("admin");
     }
 
     @Override
     public String toString() {
-        return "BankAccount{" + ", username=" + username + ", lastTransactionDate=" + lastTransactionDate + "balance=" + balance + '}' ;
+        return username + "'s Balance:" + balance + " € Last Transaction:" + lastTransactionDate ;
     }
-    
-    
-    
-    
-
     
 }

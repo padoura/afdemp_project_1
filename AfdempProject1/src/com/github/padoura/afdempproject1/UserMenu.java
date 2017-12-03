@@ -5,26 +5,54 @@
  */
 package com.github.padoura.afdempproject1;
 
+import java.util.Scanner;
+
 /**
  *
  * @author padoura <padoura@users.noreply.github.com>
  */
-public abstract class UserMenu {
+public class UserMenu {
     
     private BankAccount bankAccount;
     
-    public void viewAccount(BankAccount account){
-        
+    protected void printAdminMenu() {
+            System.out.println("Please choose one of the following options:");
+            System.out.println("(1) View My Account");
+            System.out.println("(2) View Members' Accounts");
+            System.out.println("(3) Deposit to Member's Accounts");
+            System.out.println("(4) Withdraw from Members' Accounts");
+            System.out.println("(5) Send Today's Transactions and Exit");
+            System.out.println("(0) Exit");
     }
     
-    public boolean amountsAreAvailable(){
+    protected void printMemberMenu() {
+            System.out.println("Please choose one of the following options:");
+            System.out.println("(1) View My Account");
+            System.out.println("(2) Deposit to Cooperative's Account");
+            System.out.println("(3) Deposit to a Member's Accounts");
+            System.out.println("(4) Send Today's Transactions");
+            System.out.println("(0) Exit");
+    }
+    
+    protected int menuSelector() {
+        Scanner menuScanner = new Scanner(System.in);
+        while (!menuScanner.hasNextInt()){
+            menuScanner.nextLine();
+            System.out.println("Invalid input! Please type a valid integer!");
+        }
+        return menuScanner.nextInt();
+    }
+    
+    protected boolean amountsAreAvailable(){
         return false;
     }
     
-    public void deposit(BankAccount otherAccount){
+    protected void deposit(BankAccount otherAccount){
         
     }
-    
-    public abstract void menuDialog();
+
+    protected void viewAccount(BankAccount bankAcnt) {
+        System.out.println(bankAcnt.toString());
+    }
     
 }

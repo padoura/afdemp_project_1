@@ -6,6 +6,7 @@
 package com.github.padoura.afdempproject1;
 
 import java.io.IOException;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,11 +30,90 @@ public class BankApp {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        initializeApp();
+        if (passLogin()){
+            bankAcnt.setPassword(null);
+            runApp();
+        }else
+            System.out.println("Three consecutive login failures...\n App terminated.");
+    }
+    
+    private static void initializeApp(){
         dbCtrl = new DbController();
         dbCtrl.checkConnectivity();
+        bankAcnt = new BankAccount();
         loginCtrl = new LoginController();
-        loginCtrl.showLoginDialog();
+    }
+    
+    private static void loopAdminMenu(){
+        int choice;
+        do{
+            waitForEnter();
+            clearConsole();
+            menu.printAdminMenu();
+            choice = menu.menuSelector();
+            switch (choice) {
+                case 1: viewMyAccount();
+                        break;
+                case 2: viewAllMembers();
+                        break;
+                case 3: depositToMember();
+                        break;
+                case 4: depositToAdmin();
+                        break;
+                case 5: logTransactions();
+                        terminate();
+                        break;
+                case 0: terminate();
+                        break;
+                default: System.out.println("Please choose a value between 0 and 5!");
+            }
+        }while(choice != 0);
+    }
+    
+    private static void loopMemberMenu(){
+        int choice;
+        do{
+            waitForEnter();
+            clearConsole();
+            menu.printMemberMenu();
+            choice = menu.menuSelector();
+            switch (choice) {
+                case 1: viewMyAccount();
+                        break;
+                case 3: depositToMember();
+                        break;
+                case 2: depositToAdmin();
+                        break;
+                case 4: logTransactions();
+                        break;
+                case 0: terminate();
+                        break;
+                default: System.out.println("Please choose a value between 0 and 5!");
+            }
+        }while(choice != 0); 
+    }
+    
+    private static void runApp() {
+        menu = new UserMenu();
+        if (bankAcnt.isAdmin()){
+            loopAdminMenu();
+        }else{
+            loopMemberMenu();
+        }
+    }
+    
+    private static boolean passLogin(){
+        while (loginCtrl.tryAgain()){
+            loginCtrl.getLoginInfo(bankAcnt);
+            if (dbCtrl.credentialsAreCorrect(bankAcnt)){
+                System.out.println("Login successful!");
+                return true;
+            }
+            else
+                loginCtrl.addFailedAttempt();
+        }
+        return false;
     }
     
     
@@ -45,15 +125,47 @@ public class BankApp {
     
     private static void clearConsole(){
         final String os = System.getProperty("os.name");
-        try {
-            if (os.contains("Windows")){
-                Runtime.getRuntime().exec("cls");
+        printNewlines();
+        if (os.contains("Windows")){
+            try {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } catch (InterruptedException | IOException ex) {
+                printNewlines();
             }
-            else{
-                Runtime.getRuntime().exec("clear");
-            }
-        } catch (IOException e) {
-               e.printStackTrace();
         }
+        else{
+            System.out.print("\033[H\033[2J");
+            System.out.flush();
+        }
+    }
+    
+    private static void printNewlines(){
+        System.out.println(new String(new char[20]).replace("\0", "\n"));
+    }
+    
+    private static void terminate() {
+        clearConsole();
+        System.out.println("Thanks for using our app! Bye!");
+    }
+    
+    private static void viewMyAccount() {
+        dbCtrl.loadAccount(bankAcnt);
+        menu.viewAccount(bankAcnt);
+    }
+
+    private static void viewAllMembers() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private static void depositToMember() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private static void depositToAdmin() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private static void logTransactions() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
