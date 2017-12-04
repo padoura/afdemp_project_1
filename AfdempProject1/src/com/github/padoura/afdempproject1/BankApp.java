@@ -6,11 +6,9 @@
 package com.github.padoura.afdempproject1;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.InputMismatchException;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -158,18 +156,55 @@ public class BankApp {
 //        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
 //        menu.viewAllAccounts(accountList);
 //    }
+    
+    private static void depositToAdmin() {
+        clearConsole();
+        BankAccount adminAccount = dbCtrl.loadAccount(new BankAccount("admin"));
+        dbCtrl.loadAccount(bankAcnt);
+        if (adminAccount != null){
+            BigDecimal amount = menu.enterAmount();
+            if(bankAcnt.hasEnoughBalance(amount)){
+                bankAcnt.withdraw(amount);
+                adminAccount.deposit(amount);
+                updateAccounts(adminAccount);
+            }
+            else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+                System.out.println("(No deposit was made (0 € selected)...)");
+            else
+                System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
+        }else{
+            System.out.println("There is no admin account!");
+        }
+    }
 
     private static void depositToMember() {
         ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
         clearConsole();
-        BankAccount otherAccount = menu.depositMenu(bankAcnt, accountList);
+        accountList = menu.removeAdminSelf(bankAcnt, accountList);
+        BankAccount otherAccount = menu.depositMenu(accountList);
+        dbCtrl.loadAccount(bankAcnt);
         if (otherAccount != null){
-            // TO DO HERE...
+                BigDecimal amount = menu.enterAmount();
+                if(bankAcnt.hasEnoughBalance(amount)){
+                    bankAcnt.withdraw(amount);
+                    otherAccount.deposit(amount);
+                    updateAccounts(otherAccount);
+                }
+                else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+                    System.out.println("(No deposit was made (0 € selected)...)");
+                else
+                    System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
         }
     }
-
-    private static void depositToAdmin() {
-        
+    
+    private static void updateAccounts(BankAccount otherAccount){
+        if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
+            System.out.println("Deposit successful!");
+            System.out.println("Your new balance is: " + bankAcnt.getBalance() + " €");
+        }else{
+            System.out.println("Database connection problem. Deposit could not be completed. Try again later...");
+            bankAcnt.setBalance(bankAcnt.getOldBalance());
+        }
     }
 
     private static void logTransactions() {
@@ -184,6 +219,5 @@ public class BankApp {
         }else{
             System.out.println(bankAcnt.toString());
         }
-       
     }
 }

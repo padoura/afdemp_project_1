@@ -6,6 +6,7 @@
 package com.github.padoura.afdempproject1;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 
 /**
@@ -15,42 +16,50 @@ import java.sql.Timestamp;
 public class BankAccount {
     
     private BigDecimal balance;
+    private BigDecimal oldBalance;
     private String username;
     private String password;
     private Timestamp lastTransactionDate;
+    private Integer id;
 
     protected BankAccount(String username) {
         this.username = username;
         this.password = null;
         this.balance = null;
+        this.oldBalance = null;
         this.lastTransactionDate = null;
+        this.id = null;
     }
     
     protected BankAccount() {
         this.username = null;
         this.password = null;
         this.balance = null;
+        this.oldBalance = null;
         this.lastTransactionDate = null;
+        this.id = null;
     }
 
     protected BankAccount(String username, String password) {
         this.username = username;
         this.password = password;
         this.balance = null;
+        this.oldBalance = null;
         this.lastTransactionDate = null;
+        this.id = null;
     }
     
-    protected BankAccount(String username, Timestamp lastTransactionDate, BigDecimal balance) {
+    protected BankAccount(String username, Timestamp lastTransactionDate, BigDecimal balance, Integer id) {
         this.username = username;
         this.password = null;
         this.balance = balance;
+        this.oldBalance = balance;
         this.lastTransactionDate = lastTransactionDate;
+        this.id = id;
     }
 
-
-    
-    protected void deposit(BankAccount otherAccount, BigDecimal amount){
-        
+    protected void setOldBalance(BigDecimal oldBalance) {
+        this.oldBalance = oldBalance;
     }
 
     protected void setBalance(BigDecimal balance) {
@@ -69,6 +78,10 @@ public class BankAccount {
         this.lastTransactionDate = lastTransactionDate;
     }
 
+    protected void setId(Integer id) {
+        this.id = id;
+    }
+
     protected BigDecimal getBalance() {
         return balance;
     }
@@ -84,6 +97,14 @@ public class BankAccount {
     protected Timestamp getLastTransactionDate() {
         return lastTransactionDate;
     }
+    
+    protected Integer getId(){
+        return id;
+    }
+
+    protected BigDecimal getOldBalance() {
+        return oldBalance;
+    }
 
     protected boolean isAdmin() {
         return username.equals("admin");
@@ -92,6 +113,20 @@ public class BankAccount {
     @Override
     public String toString() {
         return "Username: " + username + " Balance:" + balance + " € Last Transaction:" + lastTransactionDate ;
+    }
+    
+    protected BigDecimal deposit(BigDecimal amount){
+        balance = balance.add(amount);
+        return balance;
+    }
+    
+    protected BigDecimal withdraw(BigDecimal amount){
+        balance = balance.subtract(amount);
+        return balance;
+    }
+
+    boolean hasEnoughBalance(BigDecimal amount) {
+        return balance.compareTo(amount)>=0;
     }
     
 }

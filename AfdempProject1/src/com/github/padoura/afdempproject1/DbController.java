@@ -5,7 +5,6 @@
  */
 package com.github.padoura.afdempproject1;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -13,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -144,6 +144,8 @@ public class DbController {
             if (rs.next()){
                 account.setLastTransactionDate(rs.getTimestamp("transaction_date"));
                 account.setBalance(rs.getBigDecimal("amount"));
+                account.setOldBalance(account.getBalance());
+                account.setId(rs.getInt("user_id"));
             }else{
                 System.out.println("No such user exists!");
             }
@@ -160,7 +162,7 @@ public class DbController {
         connect();
         ArrayList<BankAccount> accountList = new ArrayList<>();
          
-        String query = "SELECT username, transaction_date, amount "
+        String query = "SELECT username, transaction_date, amount, user_id "
                 + "FROM accounts_of_users;";
         try {
             stmt = conn.createStatement();
@@ -173,7 +175,8 @@ public class DbController {
         try {
             rs = stmt.executeQuery(query);
             while (rs.next()){
-                BankAccount account = new BankAccount(rs.getString("username"), rs.getTimestamp("transaction_date"), rs.getBigDecimal("amount"));
+                BankAccount account = new BankAccount(rs.getString("username")
+                        , rs.getTimestamp("transaction_date"), rs.getBigDecimal("amount"), rs.getInt("user_id"));
                 accountList.add(account);
             }
             rs.close();
@@ -222,52 +225,71 @@ public class DbController {
         }
     }
     
-    protected boolean balanceIsEnough(String username, BigDecimal amount){
+    protected boolean balanceHasNotChanged(BankAccount account){
         connect();
-        String query = "SELECT amount_is_available(?, ?);";
+        String query = "SELECT balance_has_not_changed(" + account.getId() + ", " + account.getOldBalance() + ");";
         boolean result;
         try {
-            stmt = conn.prepareStatement(query);
+            stmt = conn.createStatement();
         } catch (SQLException ex) {
             System.out.println("Problem with database connection...");
             closeConnection();
             return false;
         }
-        
         try {
-            ((PreparedStatement) stmt).setString(1, username);
-            ((PreparedStatement) stmt).setBigDecimal(2, amount);
-        } catch (SQLException ex) {
-            System.out.println("Balance could not be checked.");
-            closeConnection();
-            return false;
-        }
-        
-        
-        try {
-            rs = ((PreparedStatement) stmt).executeQuery();
+            rs = stmt.executeQuery(query);
         } catch (SQLException ex) {
             System.out.println("Could not be executed");
             return false;
         }
-        
         try {
             rs.next();
         } catch (SQLException ex) {
             Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
-        
         try {
             result = rs.getBoolean(1);
         } catch (SQLException ex) {
             Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
-        
+        try {
+            rs.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return result;
     }
     
+    
+    protected boolean updateAccount(BankAccount bankAcnt) {
+        if (balanceHasNotChanged(bankAcnt)){
+            String sql = "UPDATE accounts SET transaction_date = (SELECT now()), amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
+            try {
+                stmt = conn.createStatement();
+            } catch (SQLException ex) {
+                System.out.println("Paei to statement gia vrouves");
+            }
+            int rs;
+            try {
+                rs = stmt.executeUpdate(sql);
+                if (rs == 1) {
+                    closeConnection();
+                    return true;
+                }else{
+                    closeConnection();
+                    return false;
+                }
+            } catch (SQLException ex) {
+                closeConnection();
+                return false;
+            }
+        }else{
+            closeConnection();
+            return false;
+        }
+    }
 
     
     

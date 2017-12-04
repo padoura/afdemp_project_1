@@ -6,13 +6,8 @@
 package com.github.padoura.afdempproject1;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.Date;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -84,19 +79,5 @@ public class DbControllerTest {
         boolean expResult = true;
         boolean result = instance.credentialsAreCorrect(account);
         assertEquals(expResult, result);
-    }
-
-    /**
-     * Test of balanceIsEnough method, of class DbController.
-     */
-    @Test
-    public void testBalanceIsEnough() {
-        System.out.println("balanceIsEnough");
-        BigDecimal amount = new BigDecimal(900).setScale(2, BigDecimal.ROUND_HALF_UP);
-        DbController instance = new DbController();
-        boolean expResult = true;
-        boolean result = instance.balanceIsEnough("user1", amount);
-        assertEquals(expResult, result);
-    }
-    
+    }    
 }

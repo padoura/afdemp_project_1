@@ -5,6 +5,7 @@
  */
 package com.github.padoura.afdempproject1;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
@@ -67,20 +68,40 @@ public class UserMenu {
             System.out.println("No users exist...");
         }
     }
-
-    protected BankAccount depositMenu(BankAccount bankAcnt, ArrayList<BankAccount> accountList) {
-        System.out.println("Please enter a number from 0 to " + accountList.size() + ":");
+    
+    protected ArrayList<BankAccount> removeAdminSelf(BankAccount bankAcnt, ArrayList<BankAccount> accountList){
         for (int i=0;i<accountList.size();i++){
             String username = accountList.get(i).getUsername();
-            if (!username.equals("admin")  || !username.equals(bankAcnt.getUsername()))
-                System.out.println("(" + (i+1) + ") " + accountList.get(i).getUsername());
+            if (username.equals("admin")  || username.equals(bankAcnt.getUsername())){
+                accountList.remove(i);
+                i--;
+            }       
+        }
+        return accountList;
+    }
+
+    protected BankAccount depositMenu(ArrayList<BankAccount> accountList) {
+        for (int i=0;i<accountList.size();i++){
+            System.out.println("(" + (i+1) + ") " + accountList.get(i).getUsername());
         }
         System.out.println("(0) Return to Main Menu");
         int choice;
         do{
+            System.out.println("Please enter a number from 0 to " + accountList.size() + ":");
             choice = menuSelector();
         }while(choice < 0 || choice > accountList.size());
         return (choice==0 ? null : accountList.get(choice-1));
     }
+    
+    protected BigDecimal enterAmount(){
+        System.out.println("Please enter an amount (amount will be rounded to 2 decimal points):");
+        Scanner menuScanner = new Scanner(System.in);
+        while (!menuScanner.hasNextBigDecimal()){
+            menuScanner.nextLine();
+            System.out.println("Invalid input! Please type a valid amount!");
+        }
+        return menuScanner.nextBigDecimal().setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+        
     
 }
