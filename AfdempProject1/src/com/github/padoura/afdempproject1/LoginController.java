@@ -14,23 +14,25 @@ import java.util.Scanner;
  */
 public class LoginController {
     
-    
-    public boolean showLoginDialog(){
-        String username = askForUsername();
-        String password = askForPassword();
-        return false;
+    private int numFails;
+
+    public LoginController() {
+        this.numFails = 0;
     }
     
-    private String askForUsername(){
-        return askForCredential("username");
+    public BankAccount getLoginInfo(BankAccount bankAccount){
+        bankAccount.setUsername(askForUsername());
+        bankAccount.setPassword(askForPassword());
+        return bankAccount;
     }
     
-    private boolean userExists(){
-        return false;
+    public void addFailedAttempt(){
+        System.out.println("Wrong username/password. Please try again.");
+       numFails++; 
     }
     
-    private boolean adminPriviledges(){
-        return false;
+    public boolean tryAgain(){
+        return numFails < 3;
     }
     
     private String askForPassword(){
@@ -41,15 +43,19 @@ public class LoginController {
         }
     }
     
+    protected String askForUsername(){
+        return askForCredential("username");
+    }
+    
     private String askForCredential(String type){
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Please enter your " + ":");
+        System.out.println("Please enter a " + type + ":");
         return scanner.nextLine();
     }
     
     private String maskCredential(String type){
         Console console = System.console();
-        console.printf("Please enter your " + ":\n");
+        console.printf("Please enter a " + type + ":\n");
         return new String(console.readPassword());
     }
     
