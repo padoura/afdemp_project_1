@@ -8,6 +8,7 @@ package com.github.padoura.afdempproject1;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.ListIterator;
 import java.util.Scanner;
 
 /**
@@ -48,7 +49,6 @@ public class BankApp {
         int choice;
         do{
             waitForEnter();
-            clearConsole();
             menu.printAdminMenu();
             choice = menu.menuSelector();
             switch (choice) {
@@ -56,9 +56,9 @@ public class BankApp {
                         break;
                 case 2: viewMemberAccount();
                         break;
-                case 3: depositToMember();
+                case 3: depositToMemberLoop();
                         break;
-                case 4: depositToAdmin();
+                case 4: depositToAdminLoop();
                         break;
                 case 5: logTransactions();
                         terminate();
@@ -74,7 +74,6 @@ public class BankApp {
         int choice;
         do{
             waitForEnter();
-            clearConsole();
             menu.printMemberMenu();
             choice = menu.menuSelector();
             switch (choice) {
@@ -120,6 +119,7 @@ public class BankApp {
         Scanner scn = new Scanner(System.in);
         System.out.println("Press Enter to continue...");
         scn.nextLine();
+        clearConsole();
     }
     
     private static void clearConsole(){
@@ -169,32 +169,46 @@ public class BankApp {
                 updateAccounts(adminAccount);
             }
             else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-                System.out.println("(No deposit was made (0 € selected)...)");
+                System.out.println("(No deposit was made (0 \u20A0 selected)...)");
             else
                 System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
         }else{
             System.out.println("There is no admin account!");
         }
     }
+    
+    private static void depositToMemberLoop() {
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        ListIterator<BankAccount> it = accountList.listIterator();
+        if (!it.hasNext()){
+            System.out.println("No members exist!");
+        }else{
+            while(it.hasNext()){
+                BankAccount otherAccount = it.next();
+                System.out.println("You are about to deposit to member " + otherAccount.getUsername() + ":");
+                executeSingleDeposit(otherAccount);
+                dbCtrl.loadAccount(bankAcnt);
+            }
+        }
+    }
 
     private static void depositToMember() {
-        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
-        clearConsole();
-        accountList = menu.removeAdminSelf(bankAcnt, accountList);
-        BankAccount otherAccount = menu.depositMenu(accountList);
-        dbCtrl.loadAccount(bankAcnt);
-        if (otherAccount != null){
-                BigDecimal amount = menu.enterAmount();
-                if(bankAcnt.hasEnoughBalance(amount)){
-                    bankAcnt.withdraw(amount);
-                    otherAccount.deposit(amount);
-                    updateAccounts(otherAccount);
-                }
-                else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-                    System.out.println("(No deposit was made (0 € selected)...)");
-                else
-                    System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
-        }
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        BankAccount otherAccount = menu.chooseFromDepositMenu(accountList);
+        if (otherAccount != null)
+                executeSingleDeposit(otherAccount);
+    }
+    
+    private static void executeSingleDeposit(BankAccount otherAccount){
+        BigDecimal amount = menu.enterAmount();
+        if(bankAcnt.hasEnoughBalance(amount)){
+            bankAcnt.withdraw(amount);
+            otherAccount.deposit(amount);
+            updateAccounts(otherAccount);
+        }else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+            System.out.println("(No deposit was made (0 EUR selected)...)");
+        else
+            System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
     }
     
     private static void updateAccounts(BankAccount otherAccount){
@@ -217,7 +231,19 @@ public class BankApp {
         if (account.getBalance() == null){
             System.out.println("User " + account.getUsername() + " does not exist.");
         }else{
-            System.out.println(bankAcnt.toString());
+            System.out.println(account.toString());
         }
+    }
+
+    private static void depositToAdminLoop() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    private static ArrayList<BankAccount> loadAvailableAccounts(){
+        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
+        accountList = menu.removeAdminSelf(bankAcnt, accountList);
+        dbCtrl.loadAccount(bankAcnt);
+        clearConsole();
+        return accountList;
     }
 }

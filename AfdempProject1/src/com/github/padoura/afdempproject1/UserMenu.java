@@ -80,7 +80,7 @@ public class UserMenu {
         return accountList;
     }
 
-    protected BankAccount depositMenu(ArrayList<BankAccount> accountList) {
+    protected BankAccount chooseFromDepositMenu(ArrayList<BankAccount> accountList) {
         for (int i=0;i<accountList.size();i++){
             System.out.println("(" + (i+1) + ") " + accountList.get(i).getUsername());
         }
