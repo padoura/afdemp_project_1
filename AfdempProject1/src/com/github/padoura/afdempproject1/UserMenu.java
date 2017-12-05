@@ -45,18 +45,6 @@ public class UserMenu {
         }
         return menuScanner.nextInt();
     }
-    
-    protected boolean amountsAreAvailable(){
-        return false;
-    }
-    
-    protected void deposit(BankAccount otherAccount){
-        
-    }
-
-//    protected void viewAccount(BankAccount bankAcnt) {
-//        System.out.println(bankAcnt.toString());
-//    }
 
     protected void viewAllAccounts(ArrayList<BankAccount> accountList) {
         Iterator it = accountList.iterator();
@@ -67,17 +55,6 @@ public class UserMenu {
         }else{
             System.out.println("No users exist...");
         }
-    }
-    
-    protected ArrayList<BankAccount> removeAdminSelf(BankAccount bankAcnt, ArrayList<BankAccount> accountList){
-        for (int i=0;i<accountList.size();i++){
-            String username = accountList.get(i).getUsername();
-            if (username.equals("admin")  || username.equals(bankAcnt.getUsername())){
-                accountList.remove(i);
-                i--;
-            }       
-        }
-        return accountList;
     }
 
     protected BankAccount chooseFromDepositMenu(ArrayList<BankAccount> accountList) {

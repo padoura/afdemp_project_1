@@ -58,7 +58,7 @@ public class BankApp {
                         break;
                 case 3: depositToMemberLoop();
                         break;
-                case 4: depositToAdminLoop();
+                case 4: withdrawFromAdminLoop();
                         break;
                 case 5: logTransactions();
                         terminate();
@@ -151,11 +151,6 @@ public class BankApp {
         dbCtrl.loadAccount(bankAcnt);
         System.out.println(bankAcnt.toString());
     }
-
-//    private static void viewAllAccounts() {
-//        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
-//        menu.viewAllAccounts(accountList);
-//    }
     
     private static void depositToAdmin() {
         clearConsole();
@@ -169,11 +164,26 @@ public class BankApp {
                 updateAccounts(adminAccount);
             }
             else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-                System.out.println("(No deposit was made (0 \u20A0 selected)...)");
+                System.out.println("(No deposit was made (0 EUR selected)...)");
             else
                 System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
         }else{
             System.out.println("There is no admin account!");
+        }
+    }
+    
+    private static void withdrawFromAdminLoop() {
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        ListIterator<BankAccount> it = accountList.listIterator();
+        if (!it.hasNext()){
+            System.out.println("No members exist!");
+        }else{
+            while(it.hasNext()){
+                BankAccount otherAccount = it.next();
+                System.out.println("You are about to withdraw from member " + otherAccount.getUsername() + ":");
+                executeSingleWithdraw(otherAccount);
+                dbCtrl.loadAccount(bankAcnt);
+            }
         }
     }
     
@@ -211,6 +221,18 @@ public class BankApp {
             System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
     }
     
+    private static void executeSingleWithdraw(BankAccount otherAccount){
+        BigDecimal amount = menu.enterAmount();
+        if(otherAccount.hasEnoughBalance(amount)){
+            otherAccount.withdraw(amount);
+            bankAcnt.deposit(amount);
+            updateAccounts(otherAccount);
+        }else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+            System.out.println("(No deposit was made (0 EUR selected)...)");
+        else
+            System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
+    }
+    
     private static void updateAccounts(BankAccount otherAccount){
         if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
             System.out.println("Deposit successful!");
@@ -234,16 +256,24 @@ public class BankApp {
             System.out.println(account.toString());
         }
     }
-
-    private static void depositToAdminLoop() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
     
     private static ArrayList<BankAccount> loadAvailableAccounts(){
         ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
-        accountList = menu.removeAdminSelf(bankAcnt, accountList);
+        accountList = removeAdminSelf(accountList);
         dbCtrl.loadAccount(bankAcnt);
         clearConsole();
         return accountList;
     }
+    
+    private static ArrayList<BankAccount> removeAdminSelf(ArrayList<BankAccount> accountList){
+        for (int i=0;i<accountList.size();i++){
+            String username = accountList.get(i).getUsername();
+            if (username.equals("admin")  || username.equals(bankAcnt.getUsername())){
+                accountList.remove(i);
+                i--;
+            }       
+        }
+        return accountList;
+    }
+    
 }
