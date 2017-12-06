@@ -15,8 +15,17 @@ import java.util.Scanner;
  * @author padoura <padoura@users.noreply.github.com>
  */
 public class UserMenu {
+
+    private static UserMenu instance;
     
-    private BankAccount bankAccount;
+    private UserMenu() {
+    }
+    
+    protected static UserMenu getInstance(){
+        if (instance == null)
+            instance = new UserMenu();
+        return instance;
+    }
     
     protected void printAdminMenu() {
             System.out.println("Please choose one of the following options:");
@@ -33,17 +42,8 @@ public class UserMenu {
             System.out.println("(1) View My Account");
             System.out.println("(2) Deposit to Cooperative's Account");
             System.out.println("(3) Deposit to a Member's Accounts");
-            System.out.println("(4) Send Today's Transactions");
+            System.out.println("(4) Send Today's Transactions and Exit");
             System.out.println("(0) Exit");
-    }
-    
-    protected int menuSelector() {
-        Scanner menuScanner = new Scanner(System.in);
-        while (!menuScanner.hasNextInt()){
-            menuScanner.nextLine();
-            System.out.println("Invalid input! Please type a valid integer!");
-        }
-        return menuScanner.nextInt();
     }
 
     protected void viewAllAccounts(ArrayList<BankAccount> accountList) {
@@ -65,7 +65,7 @@ public class UserMenu {
         int choice;
         do{
             System.out.println("Please enter a number from 0 to " + accountList.size() + ":");
-            choice = menuSelector();
+            choice = ConsoleUtilities.intSelector();
         }while(choice < 0 || choice > accountList.size());
         return (choice==0 ? null : accountList.get(choice-1));
     }

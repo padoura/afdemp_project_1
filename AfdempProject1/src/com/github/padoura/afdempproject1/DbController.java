@@ -12,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class DbController {
     
-    
+    private static DbController instance;
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/afdemp_java_1";
     private static final String USERNAME = "afdemp";
@@ -32,10 +31,16 @@ public class DbController {
     private Statement stmt;
     private ResultSet rs;
 
-    public DbController() {
+    private DbController() {
         this.conn = null;
         this.stmt = null;
         this.rs = null;
+    }
+    
+    protected static DbController getInstance(){
+        if (instance == null)
+            instance = new DbController();
+        return instance;
     }
     
     protected void checkConnectivity(){
@@ -89,13 +94,10 @@ public class DbController {
     
     private String tryConnection(){
         try {
-            //STEP 2: Register JDBC driver
             Class.forName("com.mysql.jdbc.Driver");
         } catch (ClassNotFoundException ex) {
             return "driver";
         }
-
-        //STEP 3: Open a connection
         System.out.println("Connecting to database...");
         try {
             conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
@@ -104,7 +106,6 @@ public class DbController {
         } 
         return "ok";
     }
-    
     private void closeConnection(){
         try {
             stmt.close();
@@ -118,8 +119,6 @@ public class DbController {
             }
         }
     }
-    
-    
     protected BankAccount loadAccount(BankAccount account){
         connect();
         
@@ -171,7 +170,6 @@ public class DbController {
             closeConnection();
             return null;
         }
-        
         try {
             rs = stmt.executeQuery(query);
             while (rs.next()){
@@ -262,7 +260,6 @@ public class DbController {
         return result;
     }
     
-    
     protected boolean updateAccount(BankAccount bankAcnt) {
         if (balanceHasNotChanged(bankAcnt)){
             String sql = "UPDATE accounts SET transaction_date = (SELECT now()), amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
@@ -289,104 +286,7 @@ public class DbController {
             closeConnection();
             return false;
         }
-    }
-
-    
-    
-    
-    
-        
-//    private void dbCommit() {
-//        try {
-//            conn.commit();
-//            System.out.println("All changes saved.");
-//        } catch (SQLException e) {
-//            System.out.println("Changes could be saved...");
-//        }
-//    }
-    
-    
-
-    
-    
-//    public void closeConnection(){
-//        try {
-////            System.out.println("Closing connection...");
-//            dbCommit();
-//            conn.close();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    public void checkConnectivity() {
-//        System.out.println("Welcome!");
-//        System.out.println("Please wait while database connection is tested...");
-//        dbConnect(DB_URL, USERNAME, PASSWORD);
-//        encryptDb();
-//        closeConnection();
-//        System.out.println("Connection test complete!");
-//    }
-//    
-//    /*
-//     * Encrypt column password (according to deliverable 2c).
-//     */
-//    private void encryptDb() {
-//        PreparedStatement statement;
-//        try {
-//            if (!passwordIsBinary()){
-//                String query = "ALTER TABLE users MODIFY password VARBINARY(30);";
-//                statement = conn.prepareStatement(query);
-//                int updatedRows = statement.executeUpdate();
-//                query = "UPDATE users SET password = AES_ENCRYPT(password, 'This is a funny key')";
-//                statement = conn.prepareStatement(query);
-//                updatedRows = statement.executeUpdate();
-//                System.out.println("Passwords encrypting...");
-//            }
-//        } catch (SQLException e1) {
-//            System.out.println("An error occured...");
-//            e1.printStackTrace();
-//            dbAbort();
-//        }
-//    }
-//    
-//    private boolean passwordIsBinary(){
-//        try {
-//            String query = "SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-//                    + "WHERE TABLE_NAME = 'users' AND COLUMN_NAME = 'password';";
-//            PreparedStatement statement = conn.prepareStatement(query);
-//            ResultSet result = statement.executeQuery();
-//            return (result.next() && result.getString(1).equals("varbinary"));
-//        } catch (SQLException ex) {
-//            ex.printStackTrace();
-//        }
-//        return true;
-//    }
-//    
-//    public void dbConnect (String ip, int port, String database, String username, String password) {
-//        try {
-//            Class.forName("com.mysql.jdbc.Driver");
-//            conn = DriverManager.getConnection("jdbc:mysql://"+ip+":"+port+"/"+database,username,password);
-//            conn.setAutoCommit(false);
-//        } catch(ClassNotFoundException | SQLException e) {
-//            System.out.println("Connection could not be established. Please check server status and username/password.");
-//            e.printStackTrace();
-//        }
-//    }
-//    
-//    
-//    public void dbAbort() {
-//        try {
-//            conn.rollback();
-//            System.out.println("Uncommitted changes were cancelled.");
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-
-    
-    
+    } 
 }
 
 

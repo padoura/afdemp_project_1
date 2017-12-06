@@ -5,52 +5,55 @@
  */
 package com.github.padoura.afdempproject1;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.ListIterator;
-import java.util.Scanner;
 
 /**
  *
  * @author padoura <padoura@users.noreply.github.com>
  */
-public class BankApp {
-
+public final class BankApp {
     
     private static DbController dbCtrl;
     private static LoginController loginCtrl;
     private static FileController fileCtrl;
     private static BankAccount bankAcnt ;
     private static UserMenu menu;
+    private BankApp(){
+    }
     
+
     
+    private static void initializeMenu() {
+        menu = UserMenu.getInstance();
+        fileCtrl = new FileController();
+        fileCtrl.setFilename(bankAcnt);
+        fileCtrl.appendToBuffer(bankAcnt.getUsername() + " logged in at " + FormattingUtilities.getFormattedCurrentDateTime());
+    }
     
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
         initializeApp();
         if (passLogin()){
-            bankAcnt.setPassword(null);
             runApp();
         }else
             System.out.println("Three consecutive login failures...\n App terminated.");
     }
     
-    private static void initializeApp(){
-        dbCtrl = new DbController();
+    public static void initializeApp(){
+        ConsoleUtilities.setWindowsChcp();
+        dbCtrl = DbController.getInstance();
         dbCtrl.checkConnectivity();
         bankAcnt = new BankAccount();
-        loginCtrl = new LoginController();
+        loginCtrl = LoginController.getInstance();
     }
     
     private static void loopAdminMenu(){
         int choice;
         do{
-            waitForEnter();
+            ConsoleUtilities.waitForEnter();
             menu.printAdminMenu();
-            choice = menu.menuSelector();
+            choice = ConsoleUtilities.intSelector();
             switch (choice) {
                 case 1: viewMyAccount();
                         break;
@@ -61,21 +64,19 @@ public class BankApp {
                 case 4: withdrawFromAdminLoop();
                         break;
                 case 5: logTransactions();
-                        terminate();
-                        break;
-                case 0: terminate();
+                case 0: terminateApp();
                         break;
                 default: System.out.println("Please choose a value between 0 and 5!");
             }
-        }while(choice != 0);
+        }while(choice != 0 && choice != 5);
     }
     
     private static void loopMemberMenu(){
         int choice;
         do{
-            waitForEnter();
+            ConsoleUtilities.waitForEnter();
             menu.printMemberMenu();
-            choice = menu.menuSelector();
+            choice = ConsoleUtilities.intSelector();
             switch (choice) {
                 case 1: viewMyAccount();
                         break;
@@ -84,16 +85,15 @@ public class BankApp {
                 case 2: depositToAdmin();
                         break;
                 case 4: logTransactions();
-                        break;
-                case 0: terminate();
+                case 0: terminateApp();
                         break;
                 default: System.out.println("Please choose a value between 0 and 4!");
             }
-        }while(choice != 0); 
+        }while(choice != 0 && choice != 4);
     }
     
-    private static void runApp() {
-        menu = new UserMenu();
+    public static void runApp() {
+        initializeMenu();
         if (bankAcnt.isAdmin()){
             loopAdminMenu();
         }else{
@@ -101,72 +101,38 @@ public class BankApp {
         }
     }
     
-    private static boolean passLogin(){
+    public static boolean passLogin(){
         while (loginCtrl.tryAgain()){
             loginCtrl.getLoginInfo(bankAcnt);
             if (dbCtrl.credentialsAreCorrect(bankAcnt)){
                 System.out.println("Login successful!");
+                bankAcnt.setPassword(null);
                 return true;
             }
             else
                 loginCtrl.addFailedAttempt();
         }
+        bankAcnt.setPassword(null);
         return false;
     }
     
-    
-    private static void waitForEnter() {
-        Scanner scn = new Scanner(System.in);
-        System.out.println("Press Enter to continue...");
-        scn.nextLine();
-        clearConsole();
-    }
-    
-    private static void clearConsole(){
-        final String os = System.getProperty("os.name");
-        printNewlines();
-        if (os.contains("Windows")){
-            try {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-            } catch (InterruptedException | IOException ex) {
-                printNewlines();
-            }
-        }
-        else{
-            System.out.print("\033[H\033[2J");
-            System.out.flush();
-        }
-    }
-    
-    private static void printNewlines(){
-        System.out.println(new String(new char[20]).replace("\0", "\n"));
-    }
-    
-    private static void terminate() {
-        clearConsole();
+    private static void terminateApp() {
+        ConsoleUtilities.clearConsole();
         System.out.println("Thanks for using our app! Bye!");
     }
     
     private static void viewMyAccount() {
         dbCtrl.loadAccount(bankAcnt);
         System.out.println(bankAcnt.toString());
+        fileCtrl.appendToBuffer(bankAcnt.getUsername() +  " viewed his/her account at " + FormattingUtilities.getFormattedCurrentDateTime());
     }
     
     private static void depositToAdmin() {
-        clearConsole();
         BankAccount adminAccount = dbCtrl.loadAccount(new BankAccount("admin"));
         dbCtrl.loadAccount(bankAcnt);
+        ConsoleUtilities.clearConsole();
         if (adminAccount != null){
-            BigDecimal amount = menu.enterAmount();
-            if(bankAcnt.hasEnoughBalance(amount)){
-                bankAcnt.withdraw(amount);
-                adminAccount.deposit(amount);
-                updateAccounts(adminAccount);
-            }
-            else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-                System.out.println("(No deposit was made (0 EUR selected)...)");
-            else
-                System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
+            executeSingleDeposit(adminAccount);
         }else{
             System.out.println("There is no admin account!");
         }
@@ -201,7 +167,7 @@ public class BankApp {
             }
         }
     }
-
+    
     private static void depositToMember() {
         ArrayList<BankAccount> accountList = loadAvailableAccounts();
         BankAccount otherAccount = menu.chooseFromDepositMenu(accountList);
@@ -211,49 +177,59 @@ public class BankApp {
     
     private static void executeSingleDeposit(BankAccount otherAccount){
         BigDecimal amount = menu.enterAmount();
-        if(bankAcnt.hasEnoughBalance(amount)){
+        if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+            System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
+        else if(bankAcnt.hasEnoughBalance(amount)){
             bankAcnt.withdraw(amount);
             otherAccount.deposit(amount);
             updateAccounts(otherAccount);
-        }else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-            System.out.println("(No deposit was made (0 EUR selected)...)");
+        }
         else
-            System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
+            System.out.println("Not enough balance! Your remaining balance is " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + ".");
     }
     
     private static void executeSingleWithdraw(BankAccount otherAccount){
         BigDecimal amount = menu.enterAmount();
-        if(otherAccount.hasEnoughBalance(amount)){
+        if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+            System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
+        else if(otherAccount.hasEnoughBalance(amount)){
             otherAccount.withdraw(amount);
             bankAcnt.deposit(amount);
             updateAccounts(otherAccount);
-        }else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-            System.out.println("(No deposit was made (0 EUR selected)...)");
+        }
         else
-            System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
+            System.out.println("Not enough balance! " + "Member " + otherAccount.getUsername() 
+                    + " has " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + " remaining.");
     }
     
     private static void updateAccounts(BankAccount otherAccount){
         if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
             System.out.println("Deposit successful!");
-            System.out.println("Your new balance is: " + bankAcnt.getBalance() + " €");
+            System.out.println("Your new balance is: " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()));
+            fileCtrl.appendToBuffer("User " + bankAcnt.getUsername() + " deposited " 
+                    + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
+                    + " to the account of user " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }else{
             System.out.println("Database connection problem. Deposit could not be completed. Try again later...");
             bankAcnt.setBalance(bankAcnt.getOldBalance());
         }
     }
-
+    
     private static void logTransactions() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        fileCtrl.fileWrite();
+        System.out.println("Transactions were saved to file successfully!");
+        ConsoleUtilities.waitForEnter();
     }
-
+    
     private static void viewMemberAccount() {
-        BankAccount account = new BankAccount(loginCtrl.askForUsername());
+        BankAccount account = new BankAccount(ConsoleUtilities.askForUsername());
         dbCtrl.loadAccount(account);
         if (account.getBalance() == null){
             System.out.println("User " + account.getUsername() + " does not exist.");
         }else{
             System.out.println(account.toString());
+            fileCtrl.appendToBuffer("Admin viewed the account of " +  account.getUsername() 
+                    + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }
     }
     
@@ -261,19 +237,17 @@ public class BankApp {
         ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
         accountList = removeAdminSelf(accountList);
         dbCtrl.loadAccount(bankAcnt);
-        clearConsole();
+        ConsoleUtilities.clearConsole();
         return accountList;
     }
     
     private static ArrayList<BankAccount> removeAdminSelf(ArrayList<BankAccount> accountList){
         for (int i=0;i<accountList.size();i++){
-            String username = accountList.get(i).getUsername();
-            if (username.equals("admin")  || username.equals(bankAcnt.getUsername())){
+            if (accountList.get(i).isAdmin()  || accountList.get(i).getUsername().equals(bankAcnt.getUsername())){
                 accountList.remove(i);
                 i--;
             }       
         }
         return accountList;
     }
-    
 }
