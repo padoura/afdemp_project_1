@@ -21,7 +21,6 @@ import java.util.logging.Logger;
  */
 public class DbController {
     
-    private static DbController instance;
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/afdemp_java_1";
     private static final String USERNAME = "afdemp";
@@ -229,17 +228,28 @@ public class DbController {
     
     protected boolean balanceHasNotChanged(BankAccount account){
         connect();
-        String query = "SELECT balance_has_not_changed(" + account.getId() + ", " + account.getOldBalance() + ");";
+        String query = "SELECT balance_has_not_changed(?,?);";
         boolean result;
         try {
-            stmt = conn.createStatement();
+            stmt = conn.prepareStatement(query);
         } catch (SQLException ex) {
             System.out.println("Problem with database connection...");
             closeConnection();
             return false;
         }
+        
         try {
-            rs = stmt.executeQuery(query);
+            ((PreparedStatement) stmt).setInt(1, account.getId());
+            ((PreparedStatement) stmt).setBigDecimal(2, account.getOldBalance());
+        } catch (SQLException ex) {
+            System.out.println("User could not be searched.");
+            closeConnection();
+            return false;
+        }
+        
+        
+        try {
+            rs = ((PreparedStatement) stmt).executeQuery();
         } catch (SQLException ex) {
             System.out.println("Could not be executed");
             return false;
@@ -266,16 +276,29 @@ public class DbController {
     
     protected boolean updateAccount(BankAccount bankAcnt) {
         if (balanceHasNotChanged(bankAcnt)){
-            String sql = "UPDATE accounts SET transaction_date = '" + bankAcnt.getLastTransactionDate()
-                    + "', amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
+            String sql = "UPDATE accounts SET transaction_date = ?, amount = ? WHERE user_id = ?";
+            
+//            String sql = "UPDATE accounts SET transaction_date = '" + bankAcnt.getLastTransactionDate()
+//                    + "', amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
             try {
-                stmt = conn.createStatement();
+                stmt = conn.prepareStatement(sql);
             } catch (SQLException ex) {
                 System.out.println("Paei to statement gia vrouves");
             }
+            
+            try {
+                ((PreparedStatement) stmt).setTimestamp(1, bankAcnt.getLastTransactionDate());
+                ((PreparedStatement) stmt).setBigDecimal(2, bankAcnt.getBalance());
+                ((PreparedStatement) stmt).setInt(3, bankAcnt.getId());
+            } catch (SQLException ex) {
+                System.out.println("User could not be searched.");
+                closeConnection();
+                return false;
+            }
+            
             int rs;
             try {
-                rs = stmt.executeUpdate(sql);
+                rs = ((PreparedStatement) stmt).executeUpdate();
                 if (rs == 1) {
                     closeConnection();
                     return true;
@@ -291,7 +314,7 @@ public class DbController {
             closeConnection();
             return false;
         }
-    } 
+    }
 }
 
 

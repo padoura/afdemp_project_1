@@ -25,15 +25,11 @@ public final class BankApp {
     private BankApp(){
     }
     
-
-    
-    private static void initializeMenu() {
-        menu = UserMenu.getInstance();
-        fileCtrl = new FileController();
-        fileCtrl.setFilename(bankAcnt);
-        fileCtrl.appendToBuffer(bankAcnt.getUsername() + " logged in at " + FormattingUtilities.getFormattedCurrentDateTime());
-    }
-    
+    /**
+     * The main method. Either login fails thrice and program ends or
+     * passes and app runs.
+     * @param args
+     */
     public static void main(String[] args) {
         initializeApp();
         if (passLogin()){
@@ -42,11 +38,49 @@ public final class BankApp {
             System.out.println("Three consecutive login failures...\n App terminated.");
     }
     
-    public static void initializeApp(){
+    private static void initializeApp(){
         dbCtrl = DbController.getInstance();
         dbCtrl.checkConnectivity();
         bankAcnt = new BankAccount();
         loginCtrl = LoginController.getInstance();
+    }
+    
+    private static boolean passLogin(){
+        while (loginCtrl.tryAgain()){
+            loginCtrl.getLoginInfo(bankAcnt);
+            if (credentialAreCorrect())
+                return true;
+        }
+        bankAcnt.setPassword(null);
+        return false;
+    }
+    
+    private static boolean credentialAreCorrect(){
+        if (dbCtrl.credentialsAreCorrect(bankAcnt)){
+                System.out.println("Login successful!");
+                bankAcnt.setPassword(null);
+                return true;
+            }
+        else{
+             loginCtrl.addFailedAttempt();
+             return false;
+        }  
+    }
+    
+    private static void runApp() {
+        initializeMenu();
+        if (bankAcnt.isAdmin()){
+            loopAdminMenu();
+        }else{
+            loopMemberMenu();
+        }
+    }
+
+    private static void initializeMenu() {
+        menu = UserMenu.getInstance();
+        fileCtrl = new FileController();
+        fileCtrl.setFilename(bankAcnt);
+        fileCtrl.appendToBuffer(bankAcnt.getUsername() + " logged in at " + FormattingUtilities.getFormattedCurrentDateTime());
     }
     
     private static void loopAdminMenu(){
@@ -95,121 +129,77 @@ public final class BankApp {
         }while(choice != 0 && choice != 4);
     }
     
-    public static void runApp() {
-        initializeMenu();
-        if (bankAcnt.isAdmin()){
-            loopAdminMenu();
-        }else{
-            loopMemberMenu();
-        }
-    }
-    
-    public static boolean passLogin(){
-        while (loginCtrl.tryAgain()){
-            loginCtrl.getLoginInfo(bankAcnt);
-            if (dbCtrl.credentialsAreCorrect(bankAcnt)){
-                System.out.println("Login successful!");
-                bankAcnt.setPassword(null);
-                return true;
-            }
-            else
-                loginCtrl.addFailedAttempt();
-        }
-        bankAcnt.setPassword(null);
-        return false;
-    }
-    
-    private static void terminateApp() {
-        ConsoleUtilities.clearConsole();
-        System.out.println("Thanks for using our app! Bye!");
-    }
-    
     private static void viewMyAccount() {
         dbCtrl.loadAccount(bankAcnt);
         System.out.println(bankAcnt.toString());
         fileCtrl.appendToBuffer(bankAcnt.getUsername() +  " viewed his/her account at " + FormattingUtilities.getFormattedCurrentDateTime());
     }
     
-    private static void depositToAdmin() {
-        BankAccount adminAccount = dbCtrl.loadAccount(new BankAccount("admin"));
-        dbCtrl.loadAccount(bankAcnt);
-        ConsoleUtilities.clearConsole();
-        if (adminAccount != null){
-            executeSingleDeposit(adminAccount);
+    private static void viewMemberAccount() {
+        BankAccount account = new BankAccount(ConsoleUtilities.askForUsername());
+        dbCtrl.loadAccount(account);
+        if (account.getBalance() == null){
+            System.out.println("User " + account.getUsername() + " does not exist.");
         }else{
-            System.out.println("There is no admin account!");
-        }
-    }
-    
-    private static void withdrawFromAdminLoop() {
-        ArrayList<BankAccount> accountList = loadAvailableAccounts();
-        ListIterator<BankAccount> it = accountList.listIterator();
-        if (!it.hasNext()){
-            System.out.println("No members exist!");
-        }else{
-            while(it.hasNext()){
-                BankAccount otherAccount = it.next();
-                System.out.println("You are about to withdraw from member " + otherAccount.getUsername() + ":");
-                executeSingleWithdraw(otherAccount);
-                dbCtrl.loadAccount(bankAcnt);
-            }
+            System.out.println(account.toString());
+            fileCtrl.appendToBuffer("Admin viewed the account of " +  account.getUsername() 
+                    + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }
     }
     
     private static void depositToMemberLoop() {
         ArrayList<BankAccount> accountList = loadAvailableAccounts();
-        ListIterator<BankAccount> it = accountList.listIterator();
-        if (!it.hasNext()){
+        ListIterator<BankAccount> iterator = accountList.listIterator();
+        if (!iterator.hasNext()){
             System.out.println("No members exist!");
         }else{
-            while(it.hasNext()){
-                BankAccount otherAccount = it.next();
+            while(iterator.hasNext()){
+                BankAccount otherAccount = iterator.next();
                 System.out.println("You are about to deposit to member " + otherAccount.getUsername() + ":");
-                executeSingleDeposit(otherAccount);
+                trySingleDeposit(otherAccount);
                 dbCtrl.loadAccount(bankAcnt);
             }
         }
-    }
+    }    
     
-    private static void depositToMember() {
-        ArrayList<BankAccount> accountList = loadAvailableAccounts();
-        BankAccount otherAccount = menu.chooseFromDepositMenu(accountList);
-        if (otherAccount != null)
-                executeSingleDeposit(otherAccount);
-    }
+    private static ArrayList<BankAccount> loadAvailableAccounts(){
+        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
+        accountList = removeAdminSelf(accountList);
+        dbCtrl.loadAccount(bankAcnt);
+        ConsoleUtilities.clearConsole();
+        return accountList;
+    }    
     
-    private static void executeSingleDeposit(BankAccount otherAccount){
+    private static ArrayList<BankAccount> removeAdminSelf(ArrayList<BankAccount> accountList){
+        for (int i=0;i<accountList.size();i++){
+            if (accountList.get(i).isAdmin()  || accountList.get(i).getUsername().equals(bankAcnt.getUsername())){
+                accountList.remove(i);
+                i--;
+            }    
+        }
+        return accountList;
+    }    
+    
+    private static void trySingleDeposit(BankAccount otherAccount){
         BigDecimal amount = menu.enterAmount();
-        if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP))) // TO CHANGE
+        if (amount.doubleValue() == 0)
             System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
         else if(bankAcnt.hasEnoughBalance(amount)){
-            Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
-            otherAccount.setLastTransactionDate(currentTimestamp);
-            bankAcnt.setLastTransactionDate(currentTimestamp);
-            bankAcnt.withdraw(amount);
-            otherAccount.deposit(amount);
-            updateAccounts(otherAccount);
+            executeSingleDeposit(otherAccount, amount);
         }
         else
             System.out.println("Not enough balance! Your remaining balance is " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + ".");
     }
     
-    private static void executeSingleWithdraw(BankAccount otherAccount){
-        BigDecimal amount = menu.enterAmount();
-        if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-            System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
-        else if(otherAccount.hasEnoughBalance(amount)){
-            Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
-            otherAccount.setLastTransactionDate(currentTimestamp);
-            bankAcnt.setLastTransactionDate(currentTimestamp);
-            otherAccount.withdraw(amount);
-            bankAcnt.deposit(amount);
-            updateAccounts(otherAccount);
-        }
-        else
-            System.out.println("Not enough balance! " + "Member " + otherAccount.getUsername() 
-                    + " has " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + " remaining.");
+    private static void executeSingleDeposit(BankAccount otherAccount, BigDecimal amount){
+        Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+        otherAccount.setLastTransactionDate(currentTimestamp);
+        bankAcnt.setLastTransactionDate(currentTimestamp);
+        bankAcnt.withdraw(amount);
+        otherAccount.deposit(amount);
+        updateAccounts(otherAccount);
     }
+    
     
     private static void updateAccounts(BankAccount otherAccount){
         if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
@@ -225,41 +215,86 @@ public final class BankApp {
         }
     }
     
+    private static void withdrawFromAdminLoop() {
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        ListIterator<BankAccount> iterator = accountList.listIterator();
+        if (!iterator.hasNext()){
+            System.out.println("No members exist!");
+        }else{
+            while(iterator.hasNext()){
+                BankAccount otherAccount = iterator.next();
+                System.out.println("You are about to withdraw from member " + otherAccount.getUsername() + ":");
+                trySingleWithdraw(otherAccount);
+                dbCtrl.loadAccount(bankAcnt);
+            }
+        }
+    }
+    
+    private static void trySingleWithdraw(BankAccount otherAccount){
+        BigDecimal amount = menu.enterAmount();
+        if (amount.doubleValue() == 0)
+            System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
+        else if(otherAccount.hasEnoughBalance(amount)){
+            executeSingleWithdraw(otherAccount, amount);
+        }
+        else
+            System.out.println("Not enough balance! " + "Member " + otherAccount.getUsername() 
+                    + " has " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + " remaining.");
+    }  
+    
+    private static void executeSingleWithdraw(BankAccount otherAccount, BigDecimal amount){
+        Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+        otherAccount.setLastTransactionDate(currentTimestamp);
+        bankAcnt.setLastTransactionDate(currentTimestamp);
+        otherAccount.withdraw(amount);
+        bankAcnt.deposit(amount);
+        updateAccounts(otherAccount);
+    }     
+    
     private static void logTransactions() {
         if (fileCtrl.fileWrite())
             System.out.println("Transactions were saved to file successfully!");
         else
             System.out.println("Transactions could not be saved to file!");
         ConsoleUtilities.waitForEnter();
-    }
+    }   
     
-    private static void viewMemberAccount() {
-        BankAccount account = new BankAccount(ConsoleUtilities.askForUsername());
-        dbCtrl.loadAccount(account);
-        if (account.getBalance() == null){
-            System.out.println("User " + account.getUsername() + " does not exist.");
-        }else{
-            System.out.println(account.toString());
-            fileCtrl.appendToBuffer("Admin viewed the account of " +  account.getUsername() 
-                    + " at " + FormattingUtilities.getFormattedCurrentDateTime());
-        }
-    }
-    
-    private static ArrayList<BankAccount> loadAvailableAccounts(){
-        ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
-        accountList = removeAdminSelf(accountList);
-        dbCtrl.loadAccount(bankAcnt);
+    private static void terminateApp() {
         ConsoleUtilities.clearConsole();
-        return accountList;
+        System.out.println("Thanks for using our app! Bye!");
+    }   
+    
+    private static void depositToMember() {
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        BankAccount otherAccount = menu.chooseFromDepositMenu(accountList);
+        if (otherAccount != null)
+                trySingleDeposit(otherAccount);
+    }  
+    
+    private static void depositToAdmin() {
+        BankAccount adminAccount = dbCtrl.loadAccount(new BankAccount("admin"));
+        ConsoleUtilities.clearConsole();
+        if (adminAccount != null){
+            dbCtrl.loadAccount(bankAcnt);
+            trySingleDeposit(adminAccount);
+        }else{
+            System.out.println("There is no admin account!");
+        }
     }
     
-    private static ArrayList<BankAccount> removeAdminSelf(ArrayList<BankAccount> accountList){
-        for (int i=0;i<accountList.size();i++){
-            if (accountList.get(i).isAdmin()  || accountList.get(i).getUsername().equals(bankAcnt.getUsername())){
-                accountList.remove(i);
-                i--;
-            }    
-        }
-        return accountList;
-    }
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
 }

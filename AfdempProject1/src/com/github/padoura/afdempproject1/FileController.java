@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -42,7 +44,13 @@ public class FileController {
         try {
             writer.append(buffer.toString());
         } catch (IOException ex) {
-           return false;
+            try {
+                writer.close();
+            } catch (IOException ex1) {
+                
+            }finally{
+                return false;
+            }
         }
         
         try {
