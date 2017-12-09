@@ -22,7 +22,7 @@ public final class ConsoleUtilities {
      *
      */
     public  static void waitForEnter() {
-        Scanner scn = new Scanner(System.in);
+        Scanner scn = new Scanner(System.in, "UTF-8");
         System.out.println("Press Enter to continue...");
         scn.nextLine();
         clearConsole();
@@ -81,7 +81,7 @@ public final class ConsoleUtilities {
      * @return
      */
     public static String askForCredential(String type){
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, "UTF-8");
         System.out.println("Please enter a " + type + ":");
         return scanner.nextLine();
     }
@@ -102,7 +102,7 @@ public final class ConsoleUtilities {
      * @return
      */
     public static int intSelector() {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, "UTF-8");
         while (!scanner.hasNextInt()){
             scanner.nextLine();
             System.out.println("Invalid input! Please type a valid integer!");

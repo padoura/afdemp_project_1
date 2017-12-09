@@ -12,16 +12,17 @@ package com.github.padoura.afdempproject1;
 public class LoginController {
     
     private int numFails;
-    private static LoginController instance;
 
     private LoginController() {
         this.numFails = 0;
     }
     
+    private static class SingletonHelper {
+        private static final LoginController INSTANCE = new LoginController();
+    }
+    
     protected static LoginController getInstance(){
-        if (instance == null)
-            instance = new LoginController();
-        return instance;
+        return SingletonHelper.INSTANCE;
     }
     
     protected BankAccount getLoginInfo(BankAccount bankAccount){

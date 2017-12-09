@@ -31,12 +31,6 @@ public class FileController {
     
     protected boolean fileWrite(){
         file = new File(filename);
-        
-        try {
-            file.createNewFile();
-        } catch (IOException ex) {
-            return false;
-        }
 
         Writer writer = null;
         try {

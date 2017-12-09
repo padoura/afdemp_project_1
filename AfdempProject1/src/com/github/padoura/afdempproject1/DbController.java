@@ -37,10 +37,12 @@ public class DbController {
         this.rs = null;
     }
     
+    private static class SingletonHelper {
+        private static final DbController INSTANCE = new DbController();
+    }
+    
     protected static DbController getInstance(){
-        if (instance == null)
-            instance = new DbController();
-        return instance;
+        return SingletonHelper.INSTANCE;
     }
     
     protected void checkConnectivity(){
@@ -88,7 +90,8 @@ public class DbController {
                 case "driver": flag = 100;
                             break;
                 case "db": flag++;
-            }
+                // no default  
+           }
         }
     }
     

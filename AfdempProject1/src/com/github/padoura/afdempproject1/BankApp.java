@@ -65,6 +65,7 @@ public final class BankApp {
                 case 4: withdrawFromAdminLoop();
                         break;
                 case 5: logTransactions();
+                        // no break
                 case 0: terminateApp();
                         break;
                 default: System.out.println("Please choose a value between 0 and 5!");
@@ -86,6 +87,7 @@ public final class BankApp {
                 case 2: depositToAdmin();
                         break;
                 case 4: logTransactions();
+                        // no break
                 case 0: terminateApp();
                         break;
                 default: System.out.println("Please choose a value between 0 and 4!");

@@ -15,16 +15,16 @@ import java.util.Scanner;
  * @author padoura <padoura@users.noreply.github.com>
  */
 public class UserMenu {
-
-    private static UserMenu instance;
     
     private UserMenu() {
     }
     
+    private static class SingletonHelper {
+        private static final UserMenu INSTANCE = new UserMenu();
+    }
+    
     protected static UserMenu getInstance(){
-        if (instance == null)
-            instance = new UserMenu();
-        return instance;
+        return SingletonHelper.INSTANCE;
     }
     
     protected void printAdminMenu() {
@@ -72,7 +72,7 @@ public class UserMenu {
     
     protected BigDecimal enterAmount(){
         System.out.println("Please enter an amount (amount will be rounded to 2 decimal points):");
-        Scanner menuScanner = new Scanner(System.in);
+        Scanner menuScanner = new Scanner(System.in, "UTF-8");
         while (!menuScanner.hasNextBigDecimal()){
             menuScanner.nextLine();
             System.out.println("Invalid input! Please type a valid amount!");
