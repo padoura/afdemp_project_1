@@ -6,6 +6,8 @@
 package com.github.padoura.afdempproject1;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
@@ -41,7 +43,6 @@ public final class BankApp {
     }
     
     public static void initializeApp(){
-        ConsoleUtilities.setWindowsChcp();
         dbCtrl = DbController.getInstance();
         dbCtrl.checkConnectivity();
         bankAcnt = new BankAccount();
@@ -177,9 +178,12 @@ public final class BankApp {
     
     private static void executeSingleDeposit(BankAccount otherAccount){
         BigDecimal amount = menu.enterAmount();
-        if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
+        if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP))) // TO CHANGE
             System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
         else if(bankAcnt.hasEnoughBalance(amount)){
+            Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+            otherAccount.setLastTransactionDate(currentTimestamp);
+            bankAcnt.setLastTransactionDate(currentTimestamp);
             bankAcnt.withdraw(amount);
             otherAccount.deposit(amount);
             updateAccounts(otherAccount);
@@ -193,6 +197,9 @@ public final class BankApp {
         if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
             System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
         else if(otherAccount.hasEnoughBalance(amount)){
+            Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+            otherAccount.setLastTransactionDate(currentTimestamp);
+            bankAcnt.setLastTransactionDate(currentTimestamp);
             otherAccount.withdraw(amount);
             bankAcnt.deposit(amount);
             updateAccounts(otherAccount);
@@ -212,12 +219,15 @@ public final class BankApp {
         }else{
             System.out.println("Database connection problem. Deposit could not be completed. Try again later...");
             bankAcnt.setBalance(bankAcnt.getOldBalance());
+            bankAcnt.setOldLastTransactionDate(bankAcnt.getOldLastTransactionDate());
         }
     }
     
     private static void logTransactions() {
-        fileCtrl.fileWrite();
-        System.out.println("Transactions were saved to file successfully!");
+        if (fileCtrl.fileWrite())
+            System.out.println("Transactions were saved to file successfully!");
+        else
+            System.out.println("Transactions could not be saved to file!");
         ConsoleUtilities.waitForEnter();
     }
     
@@ -246,7 +256,7 @@ public final class BankApp {
             if (accountList.get(i).isAdmin()  || accountList.get(i).getUsername().equals(bankAcnt.getUsername())){
                 accountList.remove(i);
                 i--;
-            }       
+            }    
         }
         return accountList;
     }

@@ -6,7 +6,6 @@
 package com.github.padoura.afdempproject1;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Timestamp;
 
 /**
@@ -20,6 +19,7 @@ public class BankAccount {
     private String username;
     private String password;
     private Timestamp lastTransactionDate;
+    private Timestamp oldLastTransactionDate;
     private Integer id;
 
     protected BankAccount(String username) {
@@ -28,6 +28,7 @@ public class BankAccount {
         this.balance = null;
         this.oldBalance = null;
         this.lastTransactionDate = null;
+        this.oldLastTransactionDate = null;
         this.id = null;
     }
     
@@ -37,6 +38,7 @@ public class BankAccount {
         this.balance = null;
         this.oldBalance = null;
         this.lastTransactionDate = null;
+        this.oldLastTransactionDate = null;
         this.id = null;
     }
 
@@ -46,6 +48,7 @@ public class BankAccount {
         this.balance = null;
         this.oldBalance = null;
         this.lastTransactionDate = null;
+        this.oldLastTransactionDate = null;
         this.id = null;
     }
     
@@ -55,6 +58,7 @@ public class BankAccount {
         this.balance = balance;
         this.oldBalance = balance;
         this.lastTransactionDate = lastTransactionDate;
+        this.oldLastTransactionDate = lastTransactionDate;
         this.id = id;
     }
 
@@ -77,6 +81,10 @@ public class BankAccount {
     protected void setLastTransactionDate(Timestamp lastTransactionDate) {
         this.lastTransactionDate = lastTransactionDate;
     }
+    
+    protected void setOldLastTransactionDate(Timestamp lastTransactionDate) {
+        this.oldLastTransactionDate = lastTransactionDate;
+    }
 
     protected void setId(Integer id) {
         this.id = id;
@@ -98,6 +106,10 @@ public class BankAccount {
         return lastTransactionDate;
     }
     
+    protected Timestamp getOldLastTransactionDate() {
+        return oldLastTransactionDate;
+    }
+    
     protected Integer getId(){
         return id;
     }
@@ -112,7 +124,7 @@ public class BankAccount {
 
     @Override
     public String toString() {
-        return "Username: " + username + " Balance: " + FormattingUtilities.getFormattedCurrency(balance) + " Last Transaction: " + lastTransactionDate ;
+        return "Username: " + username + " Balance: " + FormattingUtilities.getFormattedCurrency(balance) + " Last Transaction: " + FormattingUtilities.formatTimestamp(lastTransactionDate) ;
     }
     
     protected BigDecimal deposit(BigDecimal amount){

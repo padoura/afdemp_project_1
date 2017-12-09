@@ -1,9 +1,0 @@
-admin logged in at 2017-12-06 04:40:08.191
-admin viewed his/her account at 2017-12-06 04:40:10.351
-admin logged in at 2017-12-06 04:45:50.086
-User admin deposited 10.00 to the account of user user1 at 2017-12-06 04:45:53.684
-User admin deposited 100000.00 to the account of user user2 at 2017-12-06 04:46:27.589
-User admin deposited 1000.00 to the account of user user1 at 2017-12-06 04:47:07.515
-admin logged in at 2017-12-06 05:01:54.848
-User admin deposited 10,00 € to the account of user user1 at 2017-12-06 05:01:59.774
-admin viewed his/her account at 2017-12-06 05:02:06.016

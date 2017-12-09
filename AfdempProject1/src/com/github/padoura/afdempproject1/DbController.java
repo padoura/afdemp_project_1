@@ -94,7 +94,7 @@ public class DbController {
     
     private String tryConnection(){
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName(JDBC_DRIVER);
         } catch (ClassNotFoundException ex) {
             return "driver";
         }
@@ -142,6 +142,7 @@ public class DbController {
             rs = ((PreparedStatement) stmt).executeQuery();
             if (rs.next()){
                 account.setLastTransactionDate(rs.getTimestamp("transaction_date"));
+                account.setOldLastTransactionDate(account.getLastTransactionDate());
                 account.setBalance(rs.getBigDecimal("amount"));
                 account.setOldBalance(account.getBalance());
                 account.setId(rs.getInt("user_id"));
@@ -262,7 +263,8 @@ public class DbController {
     
     protected boolean updateAccount(BankAccount bankAcnt) {
         if (balanceHasNotChanged(bankAcnt)){
-            String sql = "UPDATE accounts SET transaction_date = (SELECT now()), amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
+            String sql = "UPDATE accounts SET transaction_date = '" + bankAcnt.getLastTransactionDate()
+                    + "', amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
             try {
                 stmt = conn.createStatement();
             } catch (SQLException ex) {
