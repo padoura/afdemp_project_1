@@ -59,10 +59,7 @@ public class UserMenu {
     }
 
     protected BankAccount chooseFromDepositMenu(ArrayList<BankAccount> accountList) {
-        for (int i=0;i<accountList.size();i++){
-            System.out.println("(" + (i+1) + ") " + accountList.get(i).getUsername());
-        }
-        System.out.println("(0) Return to Main Menu");
+        printMenuListOfUsers(accountList);
         int choice;
         do{
             System.out.println("Please enter a number from 0 to " + accountList.size() + ":");
@@ -71,12 +68,20 @@ public class UserMenu {
         return (choice==0 ? null : accountList.get(choice-1));
     }
     
+    private void printMenuListOfUsers(ArrayList<BankAccount> accountList){
+        for (int i=0;i<accountList.size();i++){
+            System.out.println("(" + (i+1) + ") " + accountList.get(i).getUsername());
+        }
+        System.out.println("(0) Return to Main Menu");
+    }
+    
     protected BigDecimal enterAmount(){
-        System.out.println("Please enter an amount (amount will be rounded to 2 decimal points):");
+        System.out.println("Please enter an amount with comma decimal separator (amount will be rounded to 2 decimal points):");
         Scanner menuScanner = new Scanner(System.in, "UTF-8").useLocale(Locale.forLanguageTag("el-GR"));
         while (!menuScanner.hasNextBigDecimal()){
             menuScanner.nextLine();
-            System.out.println("Invalid input! Please type a valid amount!");
+            System.out.println("Invalid input! Comma should be used as decimal separator.\n"
+                    + "Please type a valid amount:");
         }
         return menuScanner.nextBigDecimal().setScale(2, BigDecimal.ROUND_HALF_UP);
     }

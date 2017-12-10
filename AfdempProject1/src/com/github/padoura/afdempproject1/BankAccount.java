@@ -124,7 +124,9 @@ public class BankAccount {
 
     @Override
     public String toString() {
-        return "Username: " + username + " Balance: " + FormattingUtilities.getFormattedCurrency(balance) + " Last Transaction: " + FormattingUtilities.formatTimestamp(lastTransactionDate) ;
+        return "Username: " + username + " Balance: " 
+                + FormattingUtilities.getFormattedCurrency(balance) 
+                + " Last Transaction: " + FormattingUtilities.formatTimestamp(lastTransactionDate) ;
     }
     
     protected BigDecimal deposit(BigDecimal amount){

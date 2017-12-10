@@ -28,13 +28,12 @@ import java.util.logging.Logger;
 public final class LoggerController {
 
     private static String logFilename;
-    private static final Logger LOGGER = Logger.getLogger("MyLog"); 
+    private static final Logger LOGGER = Logger.getLogger("BankAppLog"); 
 
     private LoggerController(){
     }
     
     protected static void setLogger(String logFilename){
-        LOGGER.setUseParentHandlers(false);
         LoggerController.logFilename = logFilename;
         if (tryCreateNewFileIfNotExists())
             tryNewFileHandler(); // sets log file
@@ -56,11 +55,12 @@ public final class LoggerController {
     
     private static void tryNewFileHandler(){
         try {
-            LOGGER.addHandler(new FileHandler(logFilename));
+            LOGGER.addHandler(new FileHandler(logFilename, true));
+            LOGGER.setUseParentHandlers(false);
         } catch (IOException ex) {
             System.out.println("Error log file could not be created. Stacktrace will be printed in console.");
         } catch (SecurityException ex) {
-            System.out.println("Error log file could not be created. Please check your user priviledges.\n "
+            System.out.println("Error log file could not be created. Please check your user priviledges.\n"
                     + "Stacktrace will be printed in console.");
         }
     }

@@ -13,7 +13,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -34,16 +33,29 @@ public class FileController {
     protected boolean fileWrite(){
         file = new File(filename);
 
-        Writer writer = null;
+        Writer writer = tryNewWriter();
+        if (writer == null)
+            return false;
+
+        if (!tryAppendWriter(writer))
+            return false;
+        
+        return tryCloseWriter(writer);
+    }
+    
+    private Writer tryNewWriter(){
         try {
-            writer = new OutputStreamWriter(new FileOutputStream(file, true), "UTF-8");
+            return new OutputStreamWriter(new FileOutputStream(file, true), "UTF-8");
         } catch (UnsupportedEncodingException | FileNotFoundException ex) {
             LoggerController.getLogger().log(Level.SEVERE, null, ex);
-            return false;
+            return null;
         }
-
+    }
+    
+    private boolean tryAppendWriter(Writer writer){
         try {
             writer.append(buffer.toString());
+            return true;
         } catch (IOException ex) {
             LoggerController.getLogger().log(Level.SEVERE, null, ex);
             try {
@@ -54,15 +66,16 @@ public class FileController {
                 return false;
             }
         }
-        
+    }
+    
+    private boolean tryCloseWriter(Writer writer){
         try {
             writer.close();
+            return true;
         } catch (IOException ex) {
             LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
-        
-        return true;
     }
     
     protected void setFilename(BankAccount account) {

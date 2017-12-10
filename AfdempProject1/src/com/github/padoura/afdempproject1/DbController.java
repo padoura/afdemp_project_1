@@ -15,7 +15,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -46,16 +45,20 @@ public class DbController {
         return SingletonHelper.INSTANCE;
     }
     
-    protected void checkConnectivity(){
+    protected boolean checkConnectivity(){
         if (connectionIsAvailable()){
             System.out.println("Database connection tested successfully!");
+            return true;
         }else{
             System.out.println("Database connection could not be established!");
+            return false;
         }
     }
     
     protected boolean connectionIsAvailable(){
-        connect();
+        if(!connect())
+            return false;
+                
         String query = "SELECT * FROM users LIMIT 1";
         
         if (!tryCreateStatement() || !tryExecuteStatement(query)){
@@ -74,24 +77,26 @@ public class DbController {
         }
     }
     
-    private void connect(){
+    private boolean connect(){
+        final int MAX_FLAG = 3;
         int flag = 0;
-        while(flag < 100){
+        while(flag < MAX_FLAG){
+            System.out.println("Attempt no. " + (flag+1) + " to connect to database...");
             switch (tryConnection()) {
-                case "connected": flag = 100;
-                            break;
-                case "driver": flag = 100;
-                            break;
+                case "connected": 
+                    return true;
+                case "driver": 
+                    return false;
                 case "db": flag++;
-                // no default  
+                // no default
            }
         }
+        return false;
     }
     
     private String tryConnection(){
         if (!driverOk())
             return "driver";
-        System.out.println("Connecting to database...");
         if (isConnected())
             return "connected";
         else
@@ -182,7 +187,8 @@ public class DbController {
     }
     
     protected BankAccount loadAccount(BankAccount account){
-        connect();
+        if(!connect())
+            return account;
         String query = "SELECT * FROM accounts_of_users WHERE username = ?;";
         
         if (!tryPrepareStatement(query) || !trySetStringToStatement(1, account.getUsername()) || !tryExecutePreparedStatement() ){
@@ -267,7 +273,8 @@ public class DbController {
     }
     
     protected ArrayList<BankAccount> loadAllAccounts() {
-        connect();
+        if(!connect())
+            return null;
         ArrayList<BankAccount> accountList = new ArrayList<>();
         String query = "SELECT username, transaction_date, amount, user_id "
                 + "FROM accounts_of_users;";
@@ -303,7 +310,8 @@ public class DbController {
     }
     
     protected boolean credentialsAreCorrect(BankAccount account){
-        connect();
+        if(!connect())
+            return false;
         String query = "SELECT user_exists(?, ?);";
         
         if (!tryPrepareStatement(query) || !trySetStringToStatement(1, account.getUsername()) 
@@ -334,7 +342,8 @@ public class DbController {
     }
     
     protected boolean updateAccounts(BankAccount bankAcnt, BankAccount otherAccount){
-        connect();
+        if(!connect())
+            return false;
         if (updateAccount(bankAcnt) && updateAccount(otherAccount) && tryCommit()){
             closeStatementAndConnection();
             return true;
@@ -361,10 +370,13 @@ public class DbController {
     
     
     protected boolean balanceHasNotChanged(BankAccount account){
-        String query = "SELECT balance_has_not_changed(?,?);";
+        String query = "SELECT balance_has_not_changed(?,?,?);";
         
-        if (!trySetAutoCommit(false) || !tryPrepareStatement(query) || !trySetIntToStatement(1, account.getId()) 
-                || !trySetBigDecimalToStatement(2, account.getOldBalance()) || !tryExecutePreparedStatement() ){
+        if (!trySetAutoCommit(false) || !tryPrepareStatement(query) 
+                || !trySetIntToStatement(1, account.getId()) 
+                || !trySetBigDecimalToStatement(2, account.getOldBalance()) 
+                || !trySetTimestampToStatement(3, account.getOldLastTransactionDate())
+                || !tryExecutePreparedStatement() ){
             closeStatementAndConnection();
             return false;
         }
