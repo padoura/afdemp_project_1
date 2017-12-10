@@ -8,6 +8,7 @@ package com.github.padoura.afdempproject1;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Scanner;
 
 /**
@@ -72,7 +73,7 @@ public class UserMenu {
     
     protected BigDecimal enterAmount(){
         System.out.println("Please enter an amount (amount will be rounded to 2 decimal points):");
-        Scanner menuScanner = new Scanner(System.in, "UTF-8");
+        Scanner menuScanner = new Scanner(System.in, "UTF-8").useLocale(Locale.forLanguageTag("el-GR"));
         while (!menuScanner.hasNextBigDecimal()){
             menuScanner.nextLine();
             System.out.println("Invalid input! Please type a valid amount!");
