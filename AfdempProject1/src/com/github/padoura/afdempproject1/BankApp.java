@@ -205,7 +205,7 @@ public final class BankApp {
         if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
             System.out.println("Deposit successful!");
             System.out.println("Your new balance is: " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()));
-            fileCtrl.appendToBuffer("User " + bankAcnt.getUsername() + " deposited " 
+            fileCtrl.appendToBuffer("User " + bankAcnt.getUsername() + " deposited (withdrew if negative)" 
                     + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
                     + " to the account of user " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }else{
