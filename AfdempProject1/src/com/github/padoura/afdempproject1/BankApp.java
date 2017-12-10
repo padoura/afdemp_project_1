@@ -5,52 +5,95 @@
  */
 package com.github.padoura.afdempproject1;
 
-import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.ListIterator;
-import java.util.Scanner;
 
 /**
  *
  * @author padoura <padoura@users.noreply.github.com>
  */
-public class BankApp {
-
+public final class BankApp {
     
     private static DbController dbCtrl;
     private static LoginController loginCtrl;
     private static FileController fileCtrl;
     private static BankAccount bankAcnt ;
     private static UserMenu menu;
+    private static final String LOGFILENAME = "myLogFile.txt";
     
-    
-    
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        initializeApp();
-        if (passLogin()){
-            bankAcnt.setPassword(null);
-            runApp();
-        }else
-            System.out.println("Three consecutive login failures...\n App terminated.");
+    private BankApp(){
     }
     
-    private static void initializeApp(){
-        dbCtrl = new DbController();
-        dbCtrl.checkConnectivity();
+    /**
+     * The main method. Either login fails thrice and program ends or
+     * passes and app runs.
+     * @param args
+     */
+    public static void main(String[] args) {
+        if (!initializeApp())
+            System.out.println("Check database connection and try again later...");
+        else if (passLogin()){
+            runApp();
+        }else
+            System.out.println("Three consecutive login failures...\n"
+                    + "App terminated.");
+    }
+    
+    private static boolean initializeApp(){
+        LoggerController.setLogger(LOGFILENAME);
         bankAcnt = new BankAccount();
-        loginCtrl = new LoginController();
+        loginCtrl = LoginController.getInstance();
+        dbCtrl = DbController.getInstance();
+        return dbCtrl.checkConnectivity();
+    }
+    
+    private static boolean passLogin(){
+        while (loginCtrl.tryAgain()){
+            loginCtrl.getLoginInfo(bankAcnt);
+            if (credentialAreCorrect())
+                return true;
+        }
+        bankAcnt.setPassword(null);
+        return false;
+    }
+    
+    private static boolean credentialAreCorrect(){
+        if (dbCtrl.credentialsAreCorrect(bankAcnt)){
+                System.out.println("Login successful!");
+                bankAcnt.setPassword(null);
+                return true;
+            }
+        else{
+             loginCtrl.addFailedAttempt();
+             return false;
+        }  
+    }
+    
+    private static void runApp() {
+        initializeMenu();
+        if (bankAcnt.isAdmin()){
+            loopAdminMenu();
+        }else{
+            loopMemberMenu();
+        }
+    }
+
+    private static void initializeMenu() {
+        menu = UserMenu.getInstance();
+        fileCtrl = new FileController();
+        fileCtrl.setFilename(bankAcnt);
+        fileCtrl.appendToBuffer(bankAcnt.getUsername() + " logged in at " + FormattingUtilities.getFormattedCurrentDateTime());
     }
     
     private static void loopAdminMenu(){
         int choice;
         do{
-            waitForEnter();
+            ConsoleUtilities.waitForEnter();
             menu.printAdminMenu();
-            choice = menu.menuSelector();
+            choice = ConsoleUtilities.intSelector();
             switch (choice) {
                 case 1: viewMyAccount();
                         break;
@@ -61,21 +104,20 @@ public class BankApp {
                 case 4: withdrawFromAdminLoop();
                         break;
                 case 5: logTransactions();
-                        terminate();
-                        break;
-                case 0: terminate();
+                        // no break
+                case 0: terminateApp();
                         break;
                 default: System.out.println("Please choose a value between 0 and 5!");
             }
-        }while(choice != 0);
+        }while(choice != 0 && choice != 5);
     }
     
     private static void loopMemberMenu(){
         int choice;
         do{
-            waitForEnter();
+            ConsoleUtilities.waitForEnter();
             menu.printMemberMenu();
-            choice = menu.menuSelector();
+            choice = ConsoleUtilities.intSelector();
             switch (choice) {
                 case 1: viewMyAccount();
                         break;
@@ -84,196 +126,196 @@ public class BankApp {
                 case 2: depositToAdmin();
                         break;
                 case 4: logTransactions();
-                        break;
-                case 0: terminate();
+                        // no break
+                case 0: terminateApp();
                         break;
                 default: System.out.println("Please choose a value between 0 and 4!");
             }
-        }while(choice != 0); 
-    }
-    
-    private static void runApp() {
-        menu = new UserMenu();
-        if (bankAcnt.isAdmin()){
-            loopAdminMenu();
-        }else{
-            loopMemberMenu();
-        }
-    }
-    
-    private static boolean passLogin(){
-        while (loginCtrl.tryAgain()){
-            loginCtrl.getLoginInfo(bankAcnt);
-            if (dbCtrl.credentialsAreCorrect(bankAcnt)){
-                System.out.println("Login successful!");
-                return true;
-            }
-            else
-                loginCtrl.addFailedAttempt();
-        }
-        return false;
-    }
-    
-    
-    private static void waitForEnter() {
-        Scanner scn = new Scanner(System.in);
-        System.out.println("Press Enter to continue...");
-        scn.nextLine();
-        clearConsole();
-    }
-    
-    private static void clearConsole(){
-        final String os = System.getProperty("os.name");
-        printNewlines();
-        if (os.contains("Windows")){
-            try {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-            } catch (InterruptedException | IOException ex) {
-                printNewlines();
-            }
-        }
-        else{
-            System.out.print("\033[H\033[2J");
-            System.out.flush();
-        }
-    }
-    
-    private static void printNewlines(){
-        System.out.println(new String(new char[20]).replace("\0", "\n"));
-    }
-    
-    private static void terminate() {
-        clearConsole();
-        System.out.println("Thanks for using our app! Bye!");
+        }while(choice != 0 && choice != 4);
     }
     
     private static void viewMyAccount() {
-        dbCtrl.loadAccount(bankAcnt);
-        System.out.println(bankAcnt.toString());
-    }
-    
-    private static void depositToAdmin() {
-        clearConsole();
-        BankAccount adminAccount = dbCtrl.loadAccount(new BankAccount("admin"));
-        dbCtrl.loadAccount(bankAcnt);
-        if (adminAccount != null){
-            BigDecimal amount = menu.enterAmount();
-            if(bankAcnt.hasEnoughBalance(amount)){
-                bankAcnt.withdraw(amount);
-                adminAccount.deposit(amount);
-                updateAccounts(adminAccount);
-            }
-            else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-                System.out.println("(No deposit was made (0 EUR selected)...)");
-            else
-                System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " €");
+        if (dbCtrl.loadAccount(bankAcnt).getLastTransactionDate() != null){
+            System.out.println(bankAcnt.toString());
+            fileCtrl.appendToBuffer(bankAcnt.getUsername() +  " viewed his/her account at " 
+                    + FormattingUtilities.getFormattedCurrentDateTime());
         }else{
-            System.out.println("There is no admin account!");
+            System.out.println("Database connection could not be established...");
         }
     }
     
-    private static void withdrawFromAdminLoop() {
-        ArrayList<BankAccount> accountList = loadAvailableAccounts();
-        ListIterator<BankAccount> it = accountList.listIterator();
-        if (!it.hasNext()){
-            System.out.println("No members exist!");
+    private static void viewMemberAccount() {
+        BankAccount account = new BankAccount(ConsoleUtilities.askForUsername());
+        dbCtrl.loadAccount(account);
+        if (account.getBalance() == null){
+            System.out.println("User " + account.getUsername() + " does not exist or database connection problem...");
         }else{
-            while(it.hasNext()){
-                BankAccount otherAccount = it.next();
-                System.out.println("You are about to withdraw from member " + otherAccount.getUsername() + ":");
-                executeSingleWithdraw(otherAccount);
-                dbCtrl.loadAccount(bankAcnt);
-            }
+            System.out.println(account.toString());
+            fileCtrl.appendToBuffer("admin viewed the account of " +  account.getUsername() 
+                    + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }
     }
     
     private static void depositToMemberLoop() {
         ArrayList<BankAccount> accountList = loadAvailableAccounts();
-        ListIterator<BankAccount> it = accountList.listIterator();
-        if (!it.hasNext()){
-            System.out.println("No members exist!");
-        }else{
-            while(it.hasNext()){
-                BankAccount otherAccount = it.next();
-                System.out.println("You are about to deposit to member " + otherAccount.getUsername() + ":");
-                executeSingleDeposit(otherAccount);
-                dbCtrl.loadAccount(bankAcnt);
+        if (accountList != null){
+            ListIterator<BankAccount> iterator = accountList.listIterator();
+            if (!iterator.hasNext()){
+                System.out.println("No members exist!");
+            }else{
+                while(iterator.hasNext()){
+                    BankAccount otherAccount = iterator.next();
+                    System.out.println("You are about to deposit to member " + otherAccount.getUsername() + ":");
+                    trySingleDeposit(otherAccount);
+                    dbCtrl.loadAccount(bankAcnt);
+                }
             }
-        }
-    }
-
-    private static void depositToMember() {
-        ArrayList<BankAccount> accountList = loadAvailableAccounts();
-        BankAccount otherAccount = menu.chooseFromDepositMenu(accountList);
-        if (otherAccount != null)
-                executeSingleDeposit(otherAccount);
-    }
-    
-    private static void executeSingleDeposit(BankAccount otherAccount){
-        BigDecimal amount = menu.enterAmount();
-        if(bankAcnt.hasEnoughBalance(amount)){
-            bankAcnt.withdraw(amount);
-            otherAccount.deposit(amount);
-            updateAccounts(otherAccount);
-        }else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-            System.out.println("(No deposit was made (0 EUR selected)...)");
-        else
-            System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
-    }
-    
-    private static void executeSingleWithdraw(BankAccount otherAccount){
-        BigDecimal amount = menu.enterAmount();
-        if(otherAccount.hasEnoughBalance(amount)){
-            otherAccount.withdraw(amount);
-            bankAcnt.deposit(amount);
-            updateAccounts(otherAccount);
-        }else if (amount.equals(BigDecimal.valueOf(0).setScale(2, BigDecimal.ROUND_HALF_UP)))
-            System.out.println("(No deposit was made (0 EUR selected)...)");
-        else
-            System.out.println("Not enough balance! Your remaining balance is " + bankAcnt.getBalance() + " EUR");
-    }
-    
-    private static void updateAccounts(BankAccount otherAccount){
-        if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
-            System.out.println("Deposit successful!");
-            System.out.println("Your new balance is: " + bankAcnt.getBalance() + " €");
         }else{
-            System.out.println("Database connection problem. Deposit could not be completed. Try again later...");
-            bankAcnt.setBalance(bankAcnt.getOldBalance());
+            System.out.println("Database connection could not be established...");
         }
-    }
-
-    private static void logTransactions() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private static void viewMemberAccount() {
-        BankAccount account = new BankAccount(loginCtrl.askForUsername());
-        dbCtrl.loadAccount(account);
-        if (account.getBalance() == null){
-            System.out.println("User " + account.getUsername() + " does not exist.");
-        }else{
-            System.out.println(account.toString());
-        }
-    }
+    }    
     
     private static ArrayList<BankAccount> loadAvailableAccounts(){
         ArrayList<BankAccount> accountList = dbCtrl.loadAllAccounts();
+        if (accountList == null)
+            return null;
         accountList = removeAdminSelf(accountList);
         dbCtrl.loadAccount(bankAcnt);
-        clearConsole();
+        ConsoleUtilities.clearConsole();
         return accountList;
-    }
+    }    
     
     private static ArrayList<BankAccount> removeAdminSelf(ArrayList<BankAccount> accountList){
         for (int i=0;i<accountList.size();i++){
-            String username = accountList.get(i).getUsername();
-            if (username.equals("admin")  || username.equals(bankAcnt.getUsername())){
+            if (accountList.get(i).isAdmin()  || accountList.get(i).getUsername().equals(bankAcnt.getUsername())){
                 accountList.remove(i);
                 i--;
-            }       
+            }    
         }
         return accountList;
+    }    
+    
+    private static void trySingleDeposit(BankAccount otherAccount){
+        BigDecimal amount = menu.enterAmount();
+        if (amount.doubleValue() == 0)
+            System.out.println("No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...");
+        else if(bankAcnt.hasEnoughBalance(amount)){
+            executeSingleDeposit(otherAccount, amount);
+        }
+        else{
+            System.out.println("Not enough balance! Your remaining balance is " 
+                    + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + ".");
+            fileCtrl.appendToBuffer(bankAcnt.getUsername() + " attempted to deposit " 
+                    + FormattingUtilities.getFormattedCurrency(amount) 
+                    + " to the account of " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime() +
+                    " without having enough balance.");
+        }
     }
     
+    private static void executeSingleDeposit(BankAccount otherAccount, BigDecimal amount){
+        Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+        otherAccount.setLastTransactionDate(currentTimestamp);
+        bankAcnt.setLastTransactionDate(currentTimestamp);
+        bankAcnt.withdraw(amount);
+        otherAccount.deposit(amount);
+        updateAccounts(otherAccount);
+    }
+    
+    
+    private static void updateAccounts(BankAccount otherAccount){
+        if (dbCtrl.updateAccounts(bankAcnt, otherAccount)){
+            System.out.println("Deposit successful!");
+            System.out.println("Your new balance is: " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()));
+            fileCtrl.appendToBuffer(bankAcnt.getUsername() + " deposited (withdrew if negative) " 
+                    + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
+                    + " to the account of " + otherAccount.getUsername() + " at " + bankAcnt.getLastTransactionDate());
+        }else{
+            System.out.println("Database communication error. Deposit could not be completed. Try again later...");
+            fileCtrl.appendToBuffer(bankAcnt.getUsername() + " attempted to deposit (withdraw if negative) " 
+                    + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
+                    + " to the account of " + otherAccount.getUsername() + " at " + bankAcnt.getLastTransactionDate() +
+                    " but a database communication error occured.");
+            bankAcnt.setBalance(bankAcnt.getOldBalance());
+            bankAcnt.setLastTransactionDate(bankAcnt.getOldLastTransactionDate());
+        }
+    }
+    
+    private static void withdrawFromAdminLoop() {
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        if (accountList != null){
+            ListIterator<BankAccount> iterator = accountList.listIterator();
+            if (!iterator.hasNext()){
+                System.out.println("No members exist!");
+            }else{
+                while(iterator.hasNext()){
+                    BankAccount otherAccount = iterator.next();
+                    System.out.println("You are about to withdraw from member " + otherAccount.getUsername() + ":");
+                    trySingleWithdraw(otherAccount);
+                    dbCtrl.loadAccount(bankAcnt);
+                }
+            }
+        }else{
+            System.out.println("Database connection could not be established...");
+        }
+    }
+    
+    private static void trySingleWithdraw(BankAccount otherAccount){
+        BigDecimal amount = menu.enterAmount();
+        if (amount.doubleValue() == 0)
+            System.out.println("No withdraw was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...");
+        else if(otherAccount.hasEnoughBalance(amount)){
+            executeSingleWithdraw(otherAccount, amount);
+        }
+        else{
+            System.out.println("Not enough balance! " + "Member " + otherAccount.getUsername() 
+                    + " has " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + " remaining.");
+            
+            fileCtrl.appendToBuffer("admin attempted to withdraw " 
+                    + FormattingUtilities.getFormattedCurrency(amount)
+                    + " from the account of " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime() +
+                    " without having enough balance.");
+        }
+            
+    }  
+    
+    private static void executeSingleWithdraw(BankAccount otherAccount, BigDecimal amount){
+        Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
+        otherAccount.setLastTransactionDate(currentTimestamp);
+        bankAcnt.setLastTransactionDate(currentTimestamp);
+        otherAccount.withdraw(amount);
+        bankAcnt.deposit(amount);
+        updateAccounts(otherAccount);
+    }     
+    
+    private static void logTransactions() {
+        if (fileCtrl.fileWrite())
+            System.out.println("Transactions were saved to file successfully!");
+        else
+            System.out.println("There was a problem saving transactions to file...");
+        ConsoleUtilities.waitForEnter();
+    }
+    
+    private static void terminateApp() {
+        ConsoleUtilities.clearConsole();
+        System.out.println("Thanks for using our app! Bye!");
+    }   
+    
+    private static void depositToMember() {
+        ArrayList<BankAccount> accountList = loadAvailableAccounts();
+        if (accountList!=null){
+            BankAccount otherAccount = menu.chooseFromDepositMenu(accountList);
+            if (otherAccount != null)
+                    trySingleDeposit(otherAccount);
+        }else{
+            System.out.println("Database connection could not be established...");
+        }
+    }
+    
+    private static void depositToAdmin() {
+        BankAccount adminAccount = dbCtrl.loadAccount(new BankAccount("admin"));
+        if (adminAccount.getLastTransactionDate() != null && dbCtrl.loadAccount(bankAcnt).getLastTransactionDate() != null)
+            trySingleDeposit(adminAccount);
+        else
+            System.out.println("Database connection could not be established...");
+    }
 }

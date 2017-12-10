@@ -47,7 +47,7 @@ public class DbControllerTest {
     @Test
     public void testCheckConnectivity() {
         System.out.println("checkConnectivity");
-        DbController instance = new DbController();
+        DbController instance = DbController.getInstance();
         boolean expResult = true;
         boolean result = instance.connectionIsAvailable();
         assertEquals(expResult, result);
@@ -60,7 +60,7 @@ public class DbControllerTest {
     public void testLoadAccount() {
         System.out.println("loadAccount");
         BankAccount account = new BankAccount("admin");
-        DbController instance = new DbController();
+        DbController instance = DbController.getInstance();
         BankAccount expResult = new BankAccount("admin");
         expResult.setBalance(BigDecimal.valueOf(100000).setScale(2, BigDecimal.ROUND_HALF_UP));
         expResult.setLastTransactionDate(Timestamp.valueOf(LocalDateTime.parse("2017-11-13 19:28:47",DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
@@ -75,9 +75,9 @@ public class DbControllerTest {
     public void testPasswordIsCorrect() {
         System.out.println("passwordIsCorrect");
         BankAccount account = new BankAccount("admin","admin");
-        DbController instance = new DbController();
+        DbController instance = DbController.getInstance();
         boolean expResult = true;
         boolean result = instance.credentialsAreCorrect(account);
         assertEquals(expResult, result);
-    }    
+    }
 }

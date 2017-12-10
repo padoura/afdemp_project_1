@@ -5,16 +5,16 @@
  */
 package com.github.padoura.afdempproject1;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -22,371 +22,443 @@ import java.util.logging.Logger;
  */
 public class DbController {
     
-    
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/afdemp_java_1";
     private static final String USERNAME = "afdemp";
-    private static final String PASSWORD = "afdemp";
+    private static final String PASSWORD = "afdemp"; //it should be read from a file 
     
     private Connection conn;
     private Statement stmt;
     private ResultSet rs;
 
-    public DbController() {
+    private DbController() {
         this.conn = null;
         this.stmt = null;
         this.rs = null;
     }
     
-    protected void checkConnectivity(){
+    private static class SingletonHelper {
+        private static final DbController INSTANCE = new DbController();
+    }
+    
+    protected static DbController getInstance(){
+        return SingletonHelper.INSTANCE;
+    }
+    
+    protected boolean checkConnectivity(){
         if (connectionIsAvailable()){
             System.out.println("Database connection tested successfully!");
+            return true;
         }else{
             System.out.println("Database connection could not be established!");
+            return false;
         }
     }
     
     protected boolean connectionIsAvailable(){
-        connect();
+        if(!connect())
+            return false;
+                
+        String query = "SELECT * FROM users LIMIT 1";
         
-        try {
-            stmt = conn.createStatement();
-        } catch (SQLException ex) {
-            System.out.println("Paei to statement gia vrouves");
+        if (!tryCreateStatement() || !tryExecuteStatement(query)){
+            closeStatementAndConnection();
             return false;
         }
-        String sql;
-        sql = "SELECT * FROM users LIMIT 1";
-        try {
-            rs = stmt.executeQuery(sql);
-            if (rs.next()) {
-                rs.close();
-                return true;
-            }
-            rs.close();
+        
+        if (hasResultSet()){
+            tryCloseResultSet();
+            return true;
+        }
+        else{
+            tryCloseResultSet();
+            closeStatementAndConnection();
             return false;
-        } catch (SQLException ex) {
-            System.out.println("Moufa to query...");
-            return false;
-        } finally{
-            closeConnection();
         }
     }
     
-    private void connect(){
+    private boolean connect(){
+        final int MAX_FLAG = 3;
         int flag = 0;
-        while(flag < 100){
-            String event = tryConnection();
-            switch (event) {
-                case "ok": flag = 100;
-                            break;
-                case "driver": flag = 100;
-                            break;
+        while(flag < MAX_FLAG){
+            System.out.println("Attempt no. " + (flag+1) + " to connect to database...");
+            switch (tryConnection()) {
+                case "connected": 
+                    return true;
+                case "driver": 
+                    return false;
                 case "db": flag++;
-            }
+                // no default
+           }
         }
+        return false;
     }
     
     private String tryConnection(){
-        try {
-            //STEP 2: Register JDBC driver
-            Class.forName("com.mysql.jdbc.Driver");
-        } catch (ClassNotFoundException ex) {
+        if (!driverOk())
             return "driver";
+        if (isConnected())
+            return "connected";
+        else
+            return "db";
+    }
+    
+    private boolean driverOk(){
+        try {
+            Class.forName(JDBC_DRIVER);
+            return true;
+        } catch (ClassNotFoundException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
         }
-
-        //STEP 3: Open a connection
-        System.out.println("Connecting to database...");
+    }
+    
+    private boolean isConnected(){
         try {
             conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
+            return true;
         } catch (SQLException ex) {
-            return "db";
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
         } 
-        return "ok";
     }
     
-    private void closeConnection(){
+    private boolean closeStatementAndConnection(){
+        return tryCloseStatement() && tryCloseConnection();
+    }
+    
+    private boolean tryCloseStatement(){
         try {
             stmt.close();
+            return true;
         } catch (SQLException ex) {
-            System.out.println("Tin ekane to statement...");
-        } finally {
-            try {
-                conn.close();
-            } catch (SQLException ex) {
-                System.out.println("Paei i sindesi...");
-            }
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
         }
     }
     
+    private boolean tryCloseConnection(){
+        try {
+            conn.close();
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
     
-    protected BankAccount loadAccount(BankAccount account){
-        connect();
-        
-        String query = "SELECT * FROM accounts_of_users WHERE username = ?;";
+    private boolean tryCreateStatement(){
         try {
-            stmt = conn.prepareStatement(query);
+            stmt = conn.createStatement();
+            return true;
         } catch (SQLException ex) {
-            System.out.println("Problem with database connection...");
-            closeConnection();
-            return account;
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
         }
-        
+    }
+    
+    private boolean tryExecuteStatement(String query){
         try {
-            ((PreparedStatement) stmt).setString(1, account.getUsername());
+            rs = stmt.executeQuery(query);
+            return true;
         } catch (SQLException ex) {
-            System.out.println("User could not be searched.");
-            closeConnection();
-            return account;
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
         }
+    }
+    
+    private boolean hasResultSet(){
         try {
-            rs = ((PreparedStatement) stmt).executeQuery();
-            if (rs.next()){
-                account.setLastTransactionDate(rs.getTimestamp("transaction_date"));
-                account.setBalance(rs.getBigDecimal("amount"));
-                account.setOldBalance(account.getBalance());
-                account.setId(rs.getInt("user_id"));
-            }else{
-                System.out.println("No such user exists!");
+            if (rs.next()) {
+                return true;
             }
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+        }
+        return false;
+    }
+    
+    private void tryCloseResultSet(){
+        try {
             rs.close();
         } catch (SQLException ex) {
-            System.out.println("User could not be searched.");
-        }finally{
-            closeConnection();
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    protected BankAccount loadAccount(BankAccount account){
+        if(!connect())
             return account;
+        String query = "SELECT * FROM accounts_of_users WHERE username = ?;";
+        
+        if (!tryPrepareStatement(query) || !trySetStringToStatement(1, account.getUsername()) || !tryExecutePreparedStatement() ){
+            closeStatementAndConnection();
+            return account;
+        }
+        
+        if (hasResultSet()){
+            tryLoadingAccount(account);
+            tryCloseResultSet();
+        }else
+            tryCloseResultSet();
+        
+        closeStatementAndConnection();
+        return account;
+    }
+    
+    private boolean tryPrepareStatement(String query){
+        try {
+            stmt = conn.prepareStatement(query);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+    private boolean trySetStringToStatement(int index, String username) {
+        try {
+            ((PreparedStatement) stmt).setString(index, username);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+    private boolean tryExecutePreparedStatement(){
+        try {
+            rs = ((PreparedStatement) stmt).executeQuery();
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }  
+    }
+
+    private BankAccount tryLoadingAccount(BankAccount account){
+        account.setLastTransactionDate(tryGetTimestamp());
+        account.setOldLastTransactionDate(account.getLastTransactionDate());
+        account.setBalance(tryGetBigDecimal());
+        account.setOldBalance(account.getBalance());
+        account.setId(tryGetInteger());
+        return account;
+    }
+    
+    private Timestamp tryGetTimestamp(){
+        try {
+            return rs.getTimestamp("transaction_date");
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return null;
+        }
+    }
+    
+    private BigDecimal tryGetBigDecimal(){
+        try {
+            return rs.getBigDecimal("amount");
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return null;
+        }
+    }
+    
+    private Integer tryGetInteger(){
+        try {
+            return rs.getInt("user_id");
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return null;
         }
     }
     
     protected ArrayList<BankAccount> loadAllAccounts() {
-        connect();
+        if(!connect())
+            return null;
         ArrayList<BankAccount> accountList = new ArrayList<>();
-         
         String query = "SELECT username, transaction_date, amount, user_id "
                 + "FROM accounts_of_users;";
-        try {
-            stmt = conn.createStatement();
-        } catch (SQLException ex) {
-            System.out.println("Problem with database connection...");
-            closeConnection();
+        
+        if (!tryCreateStatement() || !tryExecuteStatement(query)){
+            closeStatementAndConnection();
             return null;
         }
         
-        try {
-            rs = stmt.executeQuery(query);
-            while (rs.next()){
-                BankAccount account = new BankAccount(rs.getString("username")
-                        , rs.getTimestamp("transaction_date"), rs.getBigDecimal("amount"), rs.getInt("user_id"));
-                accountList.add(account);
-            }
-            rs.close();
-        } catch (SQLException ex) {
-            System.out.println("User could not be searched.");
-        }finally{
-            closeConnection();
+        while (hasResultSet())
+            accountList.add(tryLoadingAccountWithUsername());
+        
+        tryCloseResultSet();
+        closeStatementAndConnection();
+        if (accountList.isEmpty()){
+            return null;
+        }else{
             return accountList;
         }
     }
     
+    private BankAccount tryLoadingAccountWithUsername(){
+        return new BankAccount(tryGetString(), tryGetTimestamp(), tryGetBigDecimal(), tryGetInteger());
+    }
     
-    
+    private String tryGetString(){
+        try {
+            return rs.getString("username");
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return null;
+        }
+    }
     
     protected boolean credentialsAreCorrect(BankAccount account){
-        connect();
+        if(!connect())
+            return false;
         String query = "SELECT user_exists(?, ?);";
-        try {
-            stmt = conn.prepareStatement(query);
-        } catch (SQLException ex) {
-            System.out.println("Problem with database connection...");
-            closeConnection();
+        
+        if (!tryPrepareStatement(query) || !trySetStringToStatement(1, account.getUsername()) 
+                || !trySetStringToStatement(2, account.getPassword()) || !tryExecutePreparedStatement() ){
+            closeStatementAndConnection();
             return false;
         }
         
-        try {
-            ((PreparedStatement) stmt).setString(1, account.getUsername());
-            ((PreparedStatement) stmt).setString(2, account.getPassword());
-        } catch (SQLException ex) {
-            System.out.println("User could not be searched.");
-            closeConnection();
-            return false;
-        }
-        
-        try {
-            rs = ((PreparedStatement) stmt).executeQuery();
-            rs.next();
-            boolean result = rs.getBoolean(1);
-            rs.close();
-            closeConnection();
+        if (hasResultSet()){
+            boolean result = tryGetBoolean();
+            tryCloseResultSet();
+            closeStatementAndConnection();
             return result;
-        } catch (SQLException ex) {
-            System.out.println("User could not be searched.");
-            closeConnection();
+        }else{
+            tryCloseResultSet();
+            closeStatementAndConnection();
             return false;
         }
     }
     
-    protected boolean balanceHasNotChanged(BankAccount account){
-        connect();
-        String query = "SELECT balance_has_not_changed(" + account.getId() + ", " + account.getOldBalance() + ");";
-        boolean result;
+    private boolean tryGetBoolean(){
         try {
-            stmt = conn.createStatement();
+            return rs.getBoolean(1);
         } catch (SQLException ex) {
-            System.out.println("Problem with database connection...");
-            closeConnection();
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
-        try {
-            rs = stmt.executeQuery(query);
-        } catch (SQLException ex) {
-            System.out.println("Could not be executed");
-            return false;
-        }
-        try {
-            rs.next();
-        } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-        try {
-            result = rs.getBoolean(1);
-        } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-        try {
-            rs.close();
-        } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return result;
     }
     
+    protected boolean updateAccounts(BankAccount bankAcnt, BankAccount otherAccount){
+        if(!connect())
+            return false;
+        if (updateAccount(bankAcnt) && updateAccount(otherAccount) && tryCommit()){
+            closeStatementAndConnection();
+            return true;
+        }else{
+            tryRollback();
+            closeStatementAndConnection();
+            return false;
+        }
+    }
     
-    protected boolean updateAccount(BankAccount bankAcnt) {
-        if (balanceHasNotChanged(bankAcnt)){
-            String sql = "UPDATE accounts SET transaction_date = (SELECT now()), amount = '" + bankAcnt.getBalance()+ "' WHERE user_id = " + bankAcnt.getId();
-            try {
-                stmt = conn.createStatement();
-            } catch (SQLException ex) {
-                System.out.println("Paei to statement gia vrouves");
-            }
-            int rs;
-            try {
-                rs = stmt.executeUpdate(sql);
-                if (rs == 1) {
-                    closeConnection();
-                    return true;
-                }else{
-                    closeConnection();
-                    return false;
-                }
-            } catch (SQLException ex) {
-                closeConnection();
+    protected boolean updateAccount(BankAccount account) {
+        if (balanceHasNotChanged(account)){
+            String query = "UPDATE accounts SET transaction_date = ?, amount = ? WHERE user_id = ?";
+            
+            if (!tryPrepareStatement(query) || !trySetTimestampToStatement(1, account.getLastTransactionDate()) || !trySetIntToStatement(3, account.getId()) 
+                    || !trySetBigDecimalToStatement(2, account.getBalance()) ){
                 return false;
             }
+            return tryExecutePreparedUpdate()==1;
         }else{
-            closeConnection();
             return false;
         }
     }
-
     
     
-    
-    
+    protected boolean balanceHasNotChanged(BankAccount account){
+        String query = "SELECT balance_has_not_changed(?,?,?);";
         
-//    private void dbCommit() {
-//        try {
-//            conn.commit();
-//            System.out.println("All changes saved.");
-//        } catch (SQLException e) {
-//            System.out.println("Changes could be saved...");
-//        }
-//    }
+        if (!trySetAutoCommit(false) || !tryPrepareStatement(query) 
+                || !trySetIntToStatement(1, account.getId()) 
+                || !trySetBigDecimalToStatement(2, account.getOldBalance()) 
+                || !trySetTimestampToStatement(3, account.getOldLastTransactionDate())
+                || !tryExecutePreparedStatement() ){
+            closeStatementAndConnection();
+            return false;
+        }
+        
+        if (hasResultSet()){
+            boolean result = tryGetBoolean();
+            tryCloseResultSet();
+            return result;
+        }else{
+            tryCloseResultSet();
+            return false;
+        }
+    }
     
+    private boolean trySetAutoCommit(boolean setting){
+        try {
+            conn.setAutoCommit(false);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
     
+    private boolean trySetIntToStatement(int index, Integer id) {
+        try {
+            ((PreparedStatement) stmt).setInt(index, id);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }    
 
+    private boolean trySetBigDecimalToStatement(int index, BigDecimal amount) {
+        try {
+            ((PreparedStatement) stmt).setBigDecimal(index, amount);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
     
+    private boolean trySetTimestampToStatement(int index, Timestamp timestamp) {
+        try {
+            ((PreparedStatement) stmt).setTimestamp(index, timestamp);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
     
-//    public void closeConnection(){
-//        try {
-////            System.out.println("Closing connection...");
-//            dbCommit();
-//            conn.close();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    public void checkConnectivity() {
-//        System.out.println("Welcome!");
-//        System.out.println("Please wait while database connection is tested...");
-//        dbConnect(DB_URL, USERNAME, PASSWORD);
-//        encryptDb();
-//        closeConnection();
-//        System.out.println("Connection test complete!");
-//    }
-//    
-//    /*
-//     * Encrypt column password (according to deliverable 2c).
-//     */
-//    private void encryptDb() {
-//        PreparedStatement statement;
-//        try {
-//            if (!passwordIsBinary()){
-//                String query = "ALTER TABLE users MODIFY password VARBINARY(30);";
-//                statement = conn.prepareStatement(query);
-//                int updatedRows = statement.executeUpdate();
-//                query = "UPDATE users SET password = AES_ENCRYPT(password, 'This is a funny key')";
-//                statement = conn.prepareStatement(query);
-//                updatedRows = statement.executeUpdate();
-//                System.out.println("Passwords encrypting...");
-//            }
-//        } catch (SQLException e1) {
-//            System.out.println("An error occured...");
-//            e1.printStackTrace();
-//            dbAbort();
-//        }
-//    }
-//    
-//    private boolean passwordIsBinary(){
-//        try {
-//            String query = "SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-//                    + "WHERE TABLE_NAME = 'users' AND COLUMN_NAME = 'password';";
-//            PreparedStatement statement = conn.prepareStatement(query);
-//            ResultSet result = statement.executeQuery();
-//            return (result.next() && result.getString(1).equals("varbinary"));
-//        } catch (SQLException ex) {
-//            ex.printStackTrace();
-//        }
-//        return true;
-//    }
-//    
-//    public void dbConnect (String ip, int port, String database, String username, String password) {
-//        try {
-//            Class.forName("com.mysql.jdbc.Driver");
-//            conn = DriverManager.getConnection("jdbc:mysql://"+ip+":"+port+"/"+database,username,password);
-//            conn.setAutoCommit(false);
-//        } catch(ClassNotFoundException | SQLException e) {
-//            System.out.println("Connection could not be established. Please check server status and username/password.");
-//            e.printStackTrace();
-//        }
-//    }
-//    
-//    
-//    public void dbAbort() {
-//        try {
-//            conn.rollback();
-//            System.out.println("Uncommitted changes were cancelled.");
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-
+    private int tryExecutePreparedUpdate(){
+        try {
+            return ((PreparedStatement) stmt).executeUpdate();
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return 0;
+        }
+    }
     
+    private boolean tryCommit(){
+        try {
+            conn.commit();
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
     
+    private boolean tryRollback(){
+        try {
+            conn.rollback();
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
 }
 
 
