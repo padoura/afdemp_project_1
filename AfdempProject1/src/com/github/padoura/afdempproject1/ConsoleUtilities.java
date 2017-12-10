@@ -8,6 +8,7 @@ package com.github.padoura.afdempproject1;
 import java.io.Console;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.logging.Level;
 
 /**
  *
@@ -38,6 +39,7 @@ public final class ConsoleUtilities {
             try {
                 new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
             } catch (InterruptedException | IOException ex) {
+                LoggerController.getLogger().log(Level.SEVERE, null, ex);
                 printNewlines(20);
             }
         }

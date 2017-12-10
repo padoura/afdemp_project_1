@@ -22,6 +22,8 @@ public final class BankApp {
     private static FileController fileCtrl;
     private static BankAccount bankAcnt ;
     private static UserMenu menu;
+    private static final String LOGFILENAME = "myLogFile.txt";
+    
     private BankApp(){
     }
     
@@ -39,6 +41,7 @@ public final class BankApp {
     }
     
     private static void initializeApp(){
+        LoggerController.setLogger(LOGFILENAME);
         dbCtrl = DbController.getInstance();
         dbCtrl.checkConnectivity();
         bankAcnt = new BankAccount();
@@ -202,10 +205,10 @@ public final class BankApp {
     
     
     private static void updateAccounts(BankAccount otherAccount){
-        if (dbCtrl.updateAccount(bankAcnt) && dbCtrl.updateAccount(otherAccount)){
+        if (dbCtrl.updateAccounts(bankAcnt, otherAccount)){
             System.out.println("Deposit successful!");
             System.out.println("Your new balance is: " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()));
-            fileCtrl.appendToBuffer("User " + bankAcnt.getUsername() + " deposited (withdrew if negative)" 
+            fileCtrl.appendToBuffer("User " + bankAcnt.getUsername() + " deposited (withdrew if negative) " 
                     + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
                     + " to the account of user " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }else{
@@ -233,7 +236,7 @@ public final class BankApp {
     private static void trySingleWithdraw(BankAccount otherAccount){
         BigDecimal amount = menu.enterAmount();
         if (amount.doubleValue() == 0)
-            System.out.println("(No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...)");
+            System.out.println("No deposit was made ("+ FormattingUtilities.getFormattedCurrency(0) + " selected)...");
         else if(otherAccount.hasEnoughBalance(amount)){
             executeSingleWithdraw(otherAccount, amount);
         }
@@ -281,20 +284,4 @@ public final class BankApp {
             System.out.println("There is no admin account!");
         }
     }
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
 }

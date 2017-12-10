@@ -26,7 +26,7 @@ public class DbController {
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/afdemp_java_1";
     private static final String USERNAME = "afdemp";
-    private static final String PASSWORD = "afdemp"; //it should be read from a file
+    private static final String PASSWORD = "afdemp"; //it should be read from a file 
     
     private Connection conn;
     private Statement stmt;
@@ -103,7 +103,7 @@ public class DbController {
             Class.forName(JDBC_DRIVER);
             return true;
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -113,7 +113,7 @@ public class DbController {
             conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         } 
     }
@@ -127,7 +127,7 @@ public class DbController {
             stmt.close();
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -137,7 +137,7 @@ public class DbController {
             conn.close();
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -147,7 +147,7 @@ public class DbController {
             stmt = conn.createStatement();
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -157,7 +157,7 @@ public class DbController {
             rs = stmt.executeQuery(query);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -168,7 +168,7 @@ public class DbController {
                 return true;
             }
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
         }
         return false;
     }
@@ -177,7 +177,7 @@ public class DbController {
         try {
             rs.close();
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
         }
     }
     
@@ -205,7 +205,7 @@ public class DbController {
             stmt = conn.prepareStatement(query);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -215,7 +215,7 @@ public class DbController {
             ((PreparedStatement) stmt).setString(index, username);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -225,7 +225,7 @@ public class DbController {
             rs = ((PreparedStatement) stmt).executeQuery();
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }  
     }
@@ -243,7 +243,7 @@ public class DbController {
         try {
             return rs.getTimestamp("transaction_date");
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -252,7 +252,7 @@ public class DbController {
         try {
             return rs.getBigDecimal("amount");
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -261,7 +261,7 @@ public class DbController {
         try {
             return rs.getInt("user_id");
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -297,7 +297,7 @@ public class DbController {
         try {
             return rs.getString("username");
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -328,16 +328,42 @@ public class DbController {
         try {
             return rs.getBoolean(1);
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
     
-    protected boolean balanceHasNotChanged(BankAccount account){
+    protected boolean updateAccounts(BankAccount bankAcnt, BankAccount otherAccount){
         connect();
+        if (updateAccount(bankAcnt) && updateAccount(otherAccount) && tryCommit()){
+            closeStatementAndConnection();
+            return true;
+        }else{
+            tryRollback();
+            closeStatementAndConnection();
+            return false;
+        }
+    }
+    
+    protected boolean updateAccount(BankAccount account) {
+        if (balanceHasNotChanged(account)){
+            String query = "UPDATE accounts SET transaction_date = ?, amount = ? WHERE user_id = ?";
+            
+            if (!tryPrepareStatement(query) || !trySetTimestampToStatement(1, account.getLastTransactionDate()) || !trySetIntToStatement(3, account.getId()) 
+                    || !trySetBigDecimalToStatement(2, account.getBalance()) ){
+                return false;
+            }
+            return tryExecutePreparedUpdate()==1;
+        }else{
+            return false;
+        }
+    }
+    
+    
+    protected boolean balanceHasNotChanged(BankAccount account){
         String query = "SELECT balance_has_not_changed(?,?);";
         
-        if (!tryPrepareStatement(query) || !trySetIntToStatement(1, account.getId()) 
+        if (!trySetAutoCommit(false) || !tryPrepareStatement(query) || !trySetIntToStatement(1, account.getId()) 
                 || !trySetBigDecimalToStatement(2, account.getOldBalance()) || !tryExecutePreparedStatement() ){
             closeStatementAndConnection();
             return false;
@@ -353,12 +379,22 @@ public class DbController {
         }
     }
     
+    private boolean trySetAutoCommit(boolean setting){
+        try {
+            conn.setAutoCommit(false);
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
     private boolean trySetIntToStatement(int index, Integer id) {
         try {
             ((PreparedStatement) stmt).setInt(index, id);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }    
@@ -368,30 +404,7 @@ public class DbController {
             ((PreparedStatement) stmt).setBigDecimal(index, amount);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-    }
-
-    protected boolean updateAccount(BankAccount account) {
-        if (balanceHasNotChanged(account)){
-            String query = "UPDATE accounts SET transaction_date = ?, amount = ? WHERE user_id = ?";
-            
-            if (!tryPrepareStatement(query) || !trySetTimestampToStatement(1, account.getLastTransactionDate()) || !trySetIntToStatement(3, account.getId()) 
-                    || !trySetBigDecimalToStatement(2, account.getBalance()) ){
-                closeStatementAndConnection();
-                return false;
-            }
-            
-            if(tryExecutePreparedUpdate()==1){
-                closeStatementAndConnection();
-                return true;
-            }else{
-                closeStatementAndConnection();
-                return false;
-            }
-        }else{
-            closeStatementAndConnection();
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -401,7 +414,7 @@ public class DbController {
             ((PreparedStatement) stmt).setTimestamp(index, timestamp);
             return true;
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -410,8 +423,28 @@ public class DbController {
         try {
             return ((PreparedStatement) stmt).executeUpdate();
         } catch (SQLException ex) {
-            Logger.getLogger(DbController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return 0;
+        }
+    }
+    
+    private boolean tryCommit(){
+        try {
+            conn.commit();
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+    private boolean tryRollback(){
+        try {
+            conn.rollback();
+            return true;
+        } catch (SQLException ex) {
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
+            return false;
         }
     }
 }

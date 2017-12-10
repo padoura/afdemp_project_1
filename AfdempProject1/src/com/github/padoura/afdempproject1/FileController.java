@@ -38,18 +38,18 @@ public class FileController {
         try {
             writer = new OutputStreamWriter(new FileOutputStream(file, true), "UTF-8");
         } catch (UnsupportedEncodingException | FileNotFoundException ex) {
-            Logger.getLogger(FileController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
 
         try {
             writer.append(buffer.toString());
         } catch (IOException ex) {
-            Logger.getLogger(FileController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             try {
                 writer.close();
             } catch (IOException ex1) {
-                Logger.getLogger(FileController.class.getName()).log(Level.SEVERE, null, ex);
+                LoggerController.getLogger().log(Level.SEVERE, null, ex);
             }finally{
                 return false;
             }
@@ -58,7 +58,7 @@ public class FileController {
         try {
             writer.close();
         } catch (IOException ex) {
-            Logger.getLogger(FileController.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerController.getLogger().log(Level.SEVERE, null, ex);
             return false;
         }
         

@@ -80,6 +80,4 @@ public class UserMenu {
         }
         return menuScanner.nextBigDecimal().setScale(2, BigDecimal.ROUND_HALF_UP);
     }
-        
-    
 }
