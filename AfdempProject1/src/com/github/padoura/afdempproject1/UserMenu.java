@@ -7,7 +7,6 @@ package com.github.padoura.afdempproject1;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Scanner;
 
@@ -45,17 +44,6 @@ public class UserMenu {
             System.out.println("(3) Deposit to a Member's Accounts");
             System.out.println("(4) Send Today's Transactions and Exit");
             System.out.println("(0) Exit");
-    }
-
-    protected void viewAllAccounts(ArrayList<BankAccount> accountList) {
-        Iterator it = accountList.iterator();
-        if (it.hasNext()){
-            while(it.hasNext()){
-                System.out.println(it.next().toString());
-            }
-        }else{
-            System.out.println("No users exist...");
-        }
     }
 
     protected BankAccount chooseFromDepositMenu(ArrayList<BankAccount> accountList) {

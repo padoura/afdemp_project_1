@@ -85,7 +85,7 @@ public final class BankApp {
         menu = UserMenu.getInstance();
         fileCtrl = new FileController();
         fileCtrl.setFilename(bankAcnt);
-        fileCtrl.appendToBuffer(bankAcnt.getUsername() + " logged in at " + FormattingUtilities.getFormattedCurrentDateTime());
+        fileCtrl.appendToBuffer("Logged in at " + FormattingUtilities.getFormattedCurrentDateTime());
     }
     
     private static void loopAdminMenu(){
@@ -137,7 +137,7 @@ public final class BankApp {
     private static void viewMyAccount() {
         if (dbCtrl.loadAccount(bankAcnt).getLastTransactionDate() != null){
             System.out.println(bankAcnt.toString());
-            fileCtrl.appendToBuffer(bankAcnt.getUsername() +  " viewed his/her account at " 
+            fileCtrl.appendToBuffer("Viewed his/her account at " 
                     + FormattingUtilities.getFormattedCurrentDateTime());
         }else{
             System.out.println("Database connection could not be established...");
@@ -151,7 +151,7 @@ public final class BankApp {
             System.out.println("User " + account.getUsername() + " does not exist or database connection problem...");
         }else{
             System.out.println(account.toString());
-            fileCtrl.appendToBuffer("admin viewed the account of " +  account.getUsername() 
+            fileCtrl.appendToBuffer("Viewed the account of " +  account.getUsername() 
                     + " at " + FormattingUtilities.getFormattedCurrentDateTime());
         }
     }
@@ -205,7 +205,7 @@ public final class BankApp {
         else{
             System.out.println("Not enough balance! Your remaining balance is " 
                     + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + ".");
-            fileCtrl.appendToBuffer(bankAcnt.getUsername() + " attempted to deposit " 
+            fileCtrl.appendToBuffer("Attempted to deposit " 
                     + FormattingUtilities.getFormattedCurrency(amount) 
                     + " to the account of " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime() +
                     " without having enough balance.");
@@ -226,12 +226,12 @@ public final class BankApp {
         if (dbCtrl.updateAccounts(bankAcnt, otherAccount)){
             System.out.println("Deposit successful!");
             System.out.println("Your new balance is: " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()));
-            fileCtrl.appendToBuffer(bankAcnt.getUsername() + " deposited (withdrew if negative) " 
+            fileCtrl.appendToBuffer("Deposited (withdrew if negative) " 
                     + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
                     + " to the account of " + otherAccount.getUsername() + " at " + bankAcnt.getLastTransactionDate());
         }else{
             System.out.println("Database communication error. Deposit could not be completed. Try again later...");
-            fileCtrl.appendToBuffer(bankAcnt.getUsername() + " attempted to deposit (withdraw if negative) " 
+            fileCtrl.appendToBuffer("Attempted to deposit (withdraw if negative) " 
                     + FormattingUtilities.getFormattedCurrency(bankAcnt.getOldBalance().subtract(bankAcnt.getBalance())) 
                     + " to the account of " + otherAccount.getUsername() + " at " + bankAcnt.getLastTransactionDate() +
                     " but a database communication error occured.");
@@ -270,7 +270,7 @@ public final class BankApp {
             System.out.println("Not enough balance! " + "Member " + otherAccount.getUsername() 
                     + " has " + FormattingUtilities.getFormattedCurrency(bankAcnt.getBalance()) + " remaining.");
             
-            fileCtrl.appendToBuffer("admin attempted to withdraw " 
+            fileCtrl.appendToBuffer("Attempted to withdraw " 
                     + FormattingUtilities.getFormattedCurrency(amount)
                     + " from the account of " + otherAccount.getUsername() + " at " + FormattingUtilities.getFormattedCurrentDateTime() +
                     " without having enough balance.");

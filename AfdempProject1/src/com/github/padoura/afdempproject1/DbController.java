@@ -81,7 +81,9 @@ public class DbController {
         final int MAX_FLAG = 3;
         int flag = 0;
         while(flag < MAX_FLAG){
-            System.out.println("Attempt no. " + (flag+1) + " to connect to database...");
+            if (flag > 0){
+                System.out.println("Attempt no. " + (flag+1) + " to connect to database...");
+            }
             switch (tryConnection()) {
                 case "connected": 
                     return true;

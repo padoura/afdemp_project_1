@@ -81,8 +81,10 @@ public class FileController {
     protected void setFilename(BankAccount account) {
         if (account.isAdmin())
             filename = "statement_admin_" + FormattingUtilities.getFormattedCurrentDate() + ".txt";
-        else
+        else{
             filename = "statement_user_" + account.getUsername() + "_" + FormattingUtilities.getFormattedCurrentDate() + ".txt";
+        }
+            
     }
     
     protected void appendToBuffer(String transaction){

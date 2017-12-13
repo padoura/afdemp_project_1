@@ -49,5 +49,5 @@ public final class FormattingUtilities {
     protected static String formatTimestamp(Timestamp timestamp){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
         return timestamp.toLocalDateTime().format(formatter);
-    } 
+    }
 }
