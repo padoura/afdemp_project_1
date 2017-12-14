@@ -13,12 +13,13 @@ CREATE TABLE `users` (
   `id` int(100) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(30) UNIQUE NOT NULL,
   `password` blob NOT NULL,
+  `salt`    blob NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TRIGGER encrypt_password
 	BEFORE INSERT ON users
-    FOR EACH ROW SET NEW.password = AES_ENCRYPT(NEW.password, 'This is a funny key');
+    FOR EACH ROW SET NEW.password = UNHEX(CONCAT(NEW.password, 'some random salt here'),512);
 
 INSERT INTO `users` (`id`, `username`, `password`) VALUES
 (1,	'admin',	'admin'),
@@ -40,9 +41,6 @@ INSERT INTO `accounts` (`id`, `user_id`, `transaction_date`, `amount`) VALUES
 (2,	2,	'2017-11-13 19:29:06',	1000),
 (3,	3,	'2017-11-13 19:29:15',	1000);
 
--- ALTER TABLE users MODIFY password VARBINARY(30);
--- UPDATE users SET password = AES_ENCRYPT(password, 'This is a funny key');
-
 CREATE OR REPLACE VIEW accounts_of_users AS
 	SELECT user_id, transaction_date, amount, username 
     FROM accounts JOIN users ON(accounts.user_id = users.id);
@@ -51,7 +49,7 @@ DELIMITER $$
 CREATE FUNCTION user_exists (_username text, _password text) RETURNS boolean
     DETERMINISTIC
 BEGIN
-	RETURN EXISTS (SELECT * FROM users WHERE username = _username AND password = AES_ENCRYPT(_password, 'This is a funny key'));
+	RETURN EXISTS (SELECT * FROM users WHERE username = _username AND password = UNHEX(CONCAT(_password, 'some random salt here'),512));
 END$$
 DELIMITER ;
 

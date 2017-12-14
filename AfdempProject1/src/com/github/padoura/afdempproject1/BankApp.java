@@ -298,6 +298,7 @@ public final class BankApp {
     private static void terminateApp() {
         ConsoleUtilities.clearConsole();
         System.out.println("Thanks for using our app! Bye!");
+        ConsoleUtilities.waitForEnter();
     }   
     
     private static void depositToMember() {
