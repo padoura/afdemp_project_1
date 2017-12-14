@@ -15,6 +15,7 @@ First individual project of Afdemp's Coding Bootcamp 3. It concerns a very simpl
 5) 'x' in the statement file name for simple members is not defined, therefore I am simply using the username in its place (which is a candidate key anyway).
 6) Currency format is set with Locale("el-GR") for both displaying/writing and console input cases.
 7) Although not required, the application automatically retries to connect if an attempt to connect fails (parameter set to 3 attempts before exiting in this example).
+8) Database password, application user passwords and salts should not be hardcoded. Nevertheless, the aforementioned "mistakes" where intentionally made to keep the encryption example in this project simple.
 
 ## Installation guide ##
 1) Connect to MySQL Server as administrator. 
