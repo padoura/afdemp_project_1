@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2017 padoura <padoura@users.noreply.github.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.github.padoura.afdempproject1;
 
@@ -19,19 +30,13 @@ public final class ConsoleUtilities {
     private ConsoleUtilities(){
     }
     
-    /**
-     *
-     */
     public  static void waitForEnter() {
         Scanner scn = new Scanner(System.in, "UTF-8");
         System.out.println("Press Enter to continue...");
         scn.nextLine();
         clearConsole();
     }
-    
-    /**
-     *
-     */
+
     public static void clearConsole(){
         final String os = System.getProperty("os.name");
         printNewlines(20);
@@ -48,19 +53,11 @@ public final class ConsoleUtilities {
             System.out.flush();
         }
     }
-    
-    /**
-     *
-     * @param numLines
-     */
+
     public static void printNewlines(int numLines){
         System.out.println(new String(new char[numLines]).replace("\0", "\n"));
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public static String askForPassword(){
         if (System.console() != null){
             return maskCredential("password");
@@ -68,41 +65,23 @@ public final class ConsoleUtilities {
             return askForCredential("password");
         }
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public static String askForUsername(){
         return askForCredential("username");
     }
-    
-    /**
-     *
-     * @param type
-     * @return
-     */
+
     public static String askForCredential(String type){
         Scanner scanner = new Scanner(System.in, "UTF-8");
         System.out.println("Please enter a " + type + ":");
         return scanner.nextLine();
     }
-    
-    /**
-     *
-     * @param type
-     * @return
-     */
+
     public static String maskCredential(String type){
         Console console = System.console();
         console.printf("Please enter a " + type + ":\n");
         return new String(console.readPassword());
     }
-    
-    /**
-     *
-     * @return
-     */
+
     public static int intSelector() {
         Scanner scanner = new Scanner(System.in, "UTF-8");
         while (!scanner.hasNextInt()){
