@@ -48,9 +48,11 @@ public final class BankApp {
             System.out.println("Check database connection and try again later...");
         else if (passLogin()){
             runApp();
-        }else
+        }else{
             System.out.println("Three consecutive login failures...\n"
                     + "App terminated.");
+            ConsoleUtilities.waitForEnter();
+        }
     }
     
     private static boolean initializeApp(){
