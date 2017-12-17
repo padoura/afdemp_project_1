@@ -3,7 +3,7 @@ First individual project of Afdemp's Coding Bootcamp 3. It concerns a very simpl
 
 ## Installation guide ##
 1) Connect to MySQL Server as administrator. 
-2) Install the database by using the `afdemp_project_1/AfdempProject1/reset_database.sql` file.
+2) Install the database by using the `afdemp_project_1/AfdempProject1/reset_database.sql` file. The given credentials for database and app users have been preserved.
 3) For Windows, run the project by double-clicking the `afdemp_project_1/AfdempProject1/run.bat` file. The batch file changes the code page of command prompt to enable the display of the euro sign (€).
 
 ## Database assumptions ##
