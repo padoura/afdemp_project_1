@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.util;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -31,33 +31,33 @@ import java.util.Locale;
  */
 public final class FormattingUtilities {
 
-    protected static String getFormattedCurrency(BigDecimal amount) {
+    public static String getFormattedCurrency(BigDecimal amount) {
         Currency euro = Currency.getInstance("EUR");
         NumberFormat format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("el-GR"));
         format.setCurrency(euro);
         return format.format(amount);
     }
 
-    static String getFormattedCurrency(int i) {
-        return getFormattedCurrency(BigDecimal.valueOf(0));
+    public static String getFormattedCurrency(int i) {
+        return getFormattedCurrency(BigDecimal.valueOf(i));
     }
 
     private FormattingUtilities() {
     }
     
-    protected static String getFormattedCurrentDate(){
+    public static String getFormattedCurrentDate(){
         LocalDate date = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy");
         return date.format(formatter);
     }
     
-    protected static String getFormattedCurrentDateTime(){
+    public static String getFormattedCurrentDateTime(){
         LocalDateTime dateTime = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
         return dateTime.format(formatter);
     }
     
-    protected static String formatTimestamp(Timestamp timestamp){
+    public static String formatTimestamp(Timestamp timestamp){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
         return timestamp.toLocalDateTime().format(formatter);
     }

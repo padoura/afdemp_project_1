@@ -5,6 +5,8 @@
  */
 package com.github.padoura.afdempproject1;
 
+import org.afdemp.project1.controller.DbController;
+import org.afdemp.project1.model.BankAccount;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;

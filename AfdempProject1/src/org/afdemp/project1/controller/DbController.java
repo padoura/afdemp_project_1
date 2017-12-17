@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.controller;
 
+import org.afdemp.project1.util.LoggerController;
+import org.afdemp.project1.model.BankAccount;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -52,11 +54,11 @@ public class DbController {
         private static final DbController INSTANCE = new DbController();
     }
     
-    protected static DbController getInstance(){
+    public static DbController getInstance(){
         return SingletonHelper.INSTANCE;
     }
     
-    protected boolean checkConnectivity(){
+    public boolean checkConnectivity(){
         if (connectionIsAvailable()){
             System.out.println("Database connection tested successfully!");
             return true;
@@ -199,7 +201,7 @@ public class DbController {
         }
     }
     
-    protected BankAccount loadAccount(BankAccount account){
+    public BankAccount loadAccount(BankAccount account){
         if(!connect())
             return account;
         String query = "SELECT * FROM accounts_of_users WHERE username = ?;";
@@ -285,7 +287,7 @@ public class DbController {
         }
     }
     
-    protected ArrayList<BankAccount> loadAllAccounts() {
+    public ArrayList<BankAccount> loadAllAccounts() {
         if(!connect())
             return null;
         ArrayList<BankAccount> accountList = new ArrayList<>();
@@ -322,7 +324,7 @@ public class DbController {
         }
     }
     
-    protected boolean credentialsAreCorrect(BankAccount account){
+    public boolean credentialsAreCorrect(BankAccount account){
         if(!connect())
             return false;
         String query = "SELECT user_exists(?, ?);";
@@ -354,7 +356,7 @@ public class DbController {
         }
     }
     
-    protected boolean updateAccounts(BankAccount bankAcnt, BankAccount otherAccount){
+    public boolean updateAccounts(BankAccount bankAcnt, BankAccount otherAccount){
         if(!connect())
             return false;
         if (updateAccount(bankAcnt) && updateAccount(otherAccount) && tryCommit()){

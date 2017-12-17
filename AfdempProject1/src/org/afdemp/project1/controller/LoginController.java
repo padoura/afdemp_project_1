@@ -14,7 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.controller;
+
+import org.afdemp.project1.model.BankAccount;
+import org.afdemp.project1.util.ConsoleUtilities;
 
 /**
  *
@@ -32,22 +35,22 @@ public class LoginController {
         private static final LoginController INSTANCE = new LoginController();
     }
     
-    protected static LoginController getInstance(){
+    public static LoginController getInstance(){
         return SingletonHelper.INSTANCE;
     }
     
-    protected BankAccount getLoginInfo(BankAccount bankAccount){
+    public BankAccount getLoginInfo(BankAccount bankAccount){
         bankAccount.setUsername(ConsoleUtilities.askForUsername());
         bankAccount.setPassword(ConsoleUtilities.askForPassword());
         return bankAccount;
     }
     
-    protected void addFailedAttempt(){
+    public void addFailedAttempt(){
         System.out.println("Wrong username/password. Please try again.");
        numFails++; 
     }
     
-    protected boolean tryAgain(){
+    public boolean tryAgain(){
         return numFails < 3;
     }
 }

@@ -14,8 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.main;
 
+import org.afdemp.project1.util.LoggerController;
+import org.afdemp.project1.controller.UserMenu;
+import org.afdemp.project1.controller.LoginController;
+import org.afdemp.project1.controller.FileController;
+import org.afdemp.project1.controller.DbController;
+import org.afdemp.project1.model.BankAccount;
+import org.afdemp.project1.util.ConsoleUtilities;
+import org.afdemp.project1.util.FormattingUtilities;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;

@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.controller;
 
+import org.afdemp.project1.model.BankAccount;
+import org.afdemp.project1.util.ConsoleUtilities;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -34,11 +36,11 @@ public class UserMenu {
         private static final UserMenu INSTANCE = new UserMenu();
     }
     
-    protected static UserMenu getInstance(){
+    public static UserMenu getInstance(){
         return SingletonHelper.INSTANCE;
     }
     
-    protected void printAdminMenu() {
+    public void printAdminMenu() {
             System.out.println("Please choose one of the following options:");
             System.out.println("(1) View My Account");
             System.out.println("(2) View Members' Accounts");
@@ -48,7 +50,7 @@ public class UserMenu {
             System.out.println("(0) Exit");
     }
     
-    protected void printMemberMenu() {
+    public void printMemberMenu() {
             System.out.println("Please choose one of the following options:");
             System.out.println("(1) View My Account");
             System.out.println("(2) Deposit to Cooperative's Account");
@@ -57,7 +59,7 @@ public class UserMenu {
             System.out.println("(0) Exit");
     }
 
-    protected BankAccount chooseFromDepositMenu(ArrayList<BankAccount> accountList) {
+    public BankAccount chooseFromDepositMenu(ArrayList<BankAccount> accountList) {
         printMenuListOfUsers(accountList);
         int choice;
         do{
@@ -74,14 +76,24 @@ public class UserMenu {
         System.out.println("(0) Return to Main Menu");
     }
     
-    protected BigDecimal enterAmount(){
+    public BigDecimal enterAmount(){
         System.out.println("Please enter an amount with comma decimal separator (amount will be rounded to 2 decimal points):");
         Scanner menuScanner = new Scanner(System.in, "UTF-8").useLocale(Locale.forLanguageTag("el-GR"));
-        while (!menuScanner.hasNextBigDecimal()){
-            menuScanner.nextLine();
-            System.out.println("Invalid input! Comma should be used as decimal separator.\n"
+        while (true){
+            if (!menuScanner.hasNextBigDecimal()){
+                menuScanner.nextLine();
+                System.out.println("Invalid input! Comma should be used as decimal separator.\n"
                     + "Please type a valid amount:");
+            }else{
+                BigDecimal result = menuScanner.nextBigDecimal().setScale(2, BigDecimal.ROUND_HALF_UP);
+                if (result.compareTo(BigDecimal.ZERO)>=0)
+                    return result;
+                else{
+                    menuScanner.nextLine();
+                    System.out.println("Invalid input! The amount cannot be negative.\n"
+                            + "Please type a valid amount:");                  
+                }
+            }
         }
-        return menuScanner.nextBigDecimal().setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 }

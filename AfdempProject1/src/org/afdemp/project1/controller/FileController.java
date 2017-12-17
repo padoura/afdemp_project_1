@@ -14,8 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.controller;
 
+import org.afdemp.project1.util.LoggerController;
+import org.afdemp.project1.model.BankAccount;
+import org.afdemp.project1.util.FormattingUtilities;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -35,13 +38,13 @@ public class FileController {
     private StringBuilder buffer;
     private String filename;
     
-    protected FileController(){
+    public FileController(){
         file = null;
         filename = null;
         buffer = new StringBuilder();
     }
     
-    protected boolean fileWrite(){
+    public boolean fileWrite(){
         file = new File(filename);
 
         Writer writer = tryNewWriter();
@@ -89,7 +92,7 @@ public class FileController {
         }
     }
     
-    protected void setFilename(BankAccount account) {
+    public void setFilename(BankAccount account) {
         if (account.isAdmin())
             filename = "statement_admin_" + FormattingUtilities.getFormattedCurrentDate() + ".txt";
         else{
@@ -98,7 +101,7 @@ public class FileController {
             
     }
     
-    protected void appendToBuffer(String transaction){
+    public void appendToBuffer(String transaction){
         buffer.append(transaction);
         buffer.append("\n");
     }

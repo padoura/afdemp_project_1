@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.github.padoura.afdempproject1;
+package org.afdemp.project1.util;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  *
@@ -33,7 +34,7 @@ public final class LoggerController {
     private LoggerController(){
     }
     
-    protected static void setLogger(String logFilename){
+    public static void setLogger(String logFilename){
         LoggerController.logFilename = logFilename;
         if (tryCreateNewFileIfNotExists())
             tryNewFileHandler(); // sets log file
@@ -55,7 +56,9 @@ public final class LoggerController {
     
     private static void tryNewFileHandler(){
         try {
-            LOGGER.addHandler(new FileHandler(logFilename, true));
+            FileHandler fHandler = new FileHandler(logFilename, true);
+            fHandler.setFormatter(new SimpleFormatter());
+            LOGGER.addHandler(fHandler);
             LOGGER.setUseParentHandlers(false);
         } catch (IOException ex) {
             System.out.println("Error log file could not be created. Stacktrace will be printed in console.");
@@ -65,7 +68,7 @@ public final class LoggerController {
         }
     }
 
-    protected static Logger getLogger() {
+    public static Logger getLogger() {
         return LOGGER;
     }
     
