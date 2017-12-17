@@ -1,6 +1,11 @@
 # afdemp_project_1
 First individual project of Afdemp's Coding Bootcamp 3. It concerns a very simple, console-based, internal bank account management app.
 
+## Installation guide ##
+1) Connect to MySQL Server as administrator. 
+2) Install the database by using the `afdemp_project_1/AfdempProject1/reset_database.sql` file.
+3) For Windows, run the project by double-clicking the `afdemp_project_1/AfdempProject1/run.bat` file. The batch file changes the code page of command prompt to enable the display of the euro sign (€).
+
 ## Database assumptions ##
 1) Column `users`.`username` is a candidate key (defined as `unique`).
 2) Column `users`.`password` is stored as `blob`.
@@ -16,9 +21,4 @@ First individual project of Afdemp's Coding Bootcamp 3. It concerns a very simpl
 6) Currency format is set with Locale("el-GR") for both displaying/writing and console input cases.
 7) Although not required, the application automatically retries to connect if an attempt to connect fails (parameter set to 3 attempts before exiting in this example).
 8) Database password, application user passwords and salts should not be hardcoded. Nevertheless, the aforementioned "mistakes" where intentionally made to keep the encryption example in this project simple.
-
-## Installation guide ##
-1) Connect to MySQL Server as administrator. 
-2) Install the database by using the `afdemp_project_1/AfdempProject1/reset_database.sql` file.
-3) For Windows, run the project by double-clicking the `afdemp_project_1/AfdempProject1/run.bat` file. The batch file changes the code page of command prompt to enable the display of the euro sign (€).
 
